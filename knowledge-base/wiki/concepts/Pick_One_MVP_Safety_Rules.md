@@ -7,14 +7,14 @@ Related: `Pick_One_MVP_Interaction_Rules.md`
 
 ## Scope
 
-Pick One is a debate-shaped social product, so safety must cover more than technical security. MVP safety includes abuse prevention, reporting, content visibility, ranking integrity, privacy, and manipulation controls around `Pick`, `Say`, `Boost`, `Challenge`, `Switch`, and `Sway`.
+Pick One is a debate-shaped social product, so safety must cover more than technical security. MVP safety includes abuse prevention, reporting, content visibility, ranking integrity, privacy, and manipulation controls around `Pick`, `Say`, `Boost`, `Challenge`, `Swayed`, and `sway_count`.
 
 ## Safety Principles
 
 - Keep participation light, but keep account responsibility durable.
 - Separate product reactions from safety actions.
 - Do not use public shame mechanics for safety.
-- Do not let ranking, Boost, Sway, or Challenge reward harassment or coordinated pile-ons.
+- Do not let ranking, Boost, `Swayed`, or Challenge reward harassment or coordinated pile-ons.
 - Store moderation and punishment outside topic columns.
 - Prefer reversible visibility controls before irreversible destructive actions.
 
@@ -54,13 +54,13 @@ For Say and Challenge:
 
 - `visible`: can appear in feeds and timelines;
 - `hidden`: not shown in public feeds;
-- `eligible`: can receive Boost, Challenge, and Sway attribution;
+- `eligible`: can receive Boost, Challenge, and Swayed actions;
 - `ineligible`: visible or hidden content is excluded from ranking and attribution.
 
 Safety rule:
 
 - Hidden content is always ineligible.
-- Ineligible content must not receive new Boost, Challenge, or Sway.
+- Ineligible content must not receive new Boost, Challenge, or Swayed actions.
 - Existing event history should remain auditable even when content becomes hidden.
 
 This keeps moderation from rewriting product history while preventing unsafe content from gaining more distribution.
@@ -99,21 +99,21 @@ Ranking caution:
 - Do not rank only by Boost count.
 - Down-rank content with abnormal Boost velocity, repeated coordinated accounts, or active report pressure until reviewed.
 
-## Sway Integrity
+## Swayed Integrity
 
-`Sway` is stronger than Boost because it means a Say was selected as the reason for a Switch.
+`Swayed` is stronger than Boost because it means a Say changed the user's Pick.
 
 MVP controls:
 
-- Sway requires a real Switch.
-- Sway requires a valid `sway_say_id`.
-- The Sway Say must belong to the same topic.
-- The Sway Say must support the side the user switches to.
-- The switching user cannot Sway their own Say.
-- Hidden or ineligible Says cannot receive new Sway.
+- `Swayed` must change the user's Pick.
+- `Swayed` requires a valid Say target.
+- The Say must belong to the same topic.
+- The Say must support the side the user is moving to.
+- Users cannot tap `Swayed` on their own Say.
+- Hidden or ineligible Says cannot receive new Swayed actions.
 - One user can credit a given Say with Sway at most once per topic.
 
-Do not infer Sway from views, likes, comments, or reading order. Attribution must be user-selected during Switch.
+Do not infer Sway from views, likes, comments, or reading order. Attribution must come from an explicit `Swayed` action.
 
 ## Account And Privacy
 
@@ -148,9 +148,9 @@ Personal timeline may show detailed self-history.
 
 Global timeline should be selective:
 
-- show meaningful Say, Challenge, Switch, and Sway events;
+- show meaningful Say, Challenge, and Swayed events;
 - avoid one event per Boost;
-- avoid flooding repeated Switch events from the same user;
+- avoid flooding repeated Pick-change events from the same user;
 - hide events tied to hidden or ineligible content;
 - avoid report and punishment events in public timeline.
 
@@ -161,14 +161,14 @@ Global timeline should be selective:
 - No formal moderation court or public verdict system.
 - No public shame badges.
 - No deep Challenge debate trees.
-- No Sway attribution without explicit Switch selection.
+- No Sway count without explicit `Swayed` action.
 - No ranking system that uses only raw Boost or Sway counts.
 
 ## Open Next Decisions
 
 - Exact Challenge reply depth.
 - Exact report reason taxonomy.
-- Whether Switch requires `case_text`.
+- Whether `Swayed` requires `case_text`.
 - First ranking formula for Say lists.
 - Initial reviewer/admin workflow.
 - Account deletion and content retention policy.

@@ -8,7 +8,7 @@ Related safety rules: `Pick_One_MVP_Safety_Rules.md`
 
 ## Scope
 
-Pick One MVP is an account-based 1:1 choice arena. Users pick one side, write short cases, react to arguments, challenge specific claims, and may later switch sides. The product should feel light and fast, but the account history remains durable.
+Pick One MVP is an account-based 1:1 choice arena. Users pick one side, write short cases, react to arguments, challenge specific claims, and may later be swayed by a Say from the other side. The product should feel light and fast, but the account history remains durable.
 
 ## Product Rules
 
@@ -29,31 +29,32 @@ Pick One MVP is an account-based 1:1 choice arena. Users pick one side, write sh
 - `Boost`: support signal for a Say from the same side.
 - `Challenge`: direct rebuttal against a specific Say.
 - `Mark`: lightweight meta reaction, separate from Report.
-- `Switch`: Pick change from one side to the other.
-- `Sway`: attribution metric credited to a Say when that Say is selected as the reason for a Switch.
+- `Swayed`: button label on a Say. When successful, it changes the user's Pick to the Say's side.
+- `Sway count` / `sway_count`: the number of successful `Swayed` actions credited to a Say.
 
-## Pick And Switch
+## Pick And Swayed
 
 A user has one current Pick per topic.
 
-When a user switches sides:
+When a user taps `Swayed` on a Say:
 
-- create a durable `Switch` event;
-- update the user's current Pick;
+- create a durable Pick-change event;
+- update the user's current Pick to the Say's side;
 - preserve previous Pick history;
-- optionally attach `sway_say_id` when the user selects a Say as the reason for switching.
+- attach the Say as the change source;
+- increment that Say's `sway_count`.
 
-`Switch` is the user action. `Sway` is not a separate action; it is the attribution produced when a Switch names a Say as its reason.
+`Switch` may remain an internal event or analytics name, but it is not a user-facing product term. The user-facing action is `Swayed`.
 
 Suggested event shape:
 
 ```ts
-Switch({
+PickChange({
   topic_id,
   user_id,
   from_pick,
   to_pick,
-  sway_say_id?: string,
+  sway_say_id: string,
   case_text?: string,
   created_at
 })
@@ -67,23 +68,24 @@ A Say belongs to:
 - one author;
 - one side snapshot at creation time.
 
-The Say side must not change when the author later switches Pick. This keeps old arguments historically honest and prevents timeline items from changing meaning.
+The Say side must not change when the author later changes Pick. This keeps old arguments historically honest and prevents timeline items from changing meaning.
 
-## Sway Validation
+## Swayed Validation
 
-A Switch may include `sway_say_id` only when:
+`Swayed` succeeds only when:
 
 - the Say belongs to the same topic;
-- the Say was written for the side the user is switching to;
-- the Say was not written by the switching user;
-- the Say is visible and eligible at switch time.
+- the Say was written for the opposite side from the user's current Pick;
+- the Say was not written by the user tapping `Swayed`;
+- the Say is visible and eligible at action time.
 
-When valid, the Say gets `say_sway_count + 1`, or an equivalent derived count from the Switch event log.
+When valid, the Say gets `sway_count + 1`, or an equivalent derived count from the Pick-change event log.
 
 MVP UI copy:
 
-- Korean: `이 Say로 {n}명이 선택을 바꿨어요`
-- English: `{n} Sways`
+- Button: `Swayed`
+- Korean count: `이 Say로 {n}명이 선택을 바꿨어요`
+- English count: `{n} Sways`
 
 ## Challenge Rules
 
@@ -105,19 +107,18 @@ Pick One needs both a personal timeline and a global timeline.
 Personal timeline should show the signed-in user's topic journey:
 
 - Pick;
-- Switch;
+- Swayed actions;
 - own Say;
 - own Challenge;
 - Boost activity relevant to own Say;
-- Sway credited to own Say;
+- Sway count credited to own Say;
 - responses to own Say.
 
 Global timeline should stay selective:
 
 - meaningful Say;
 - Challenge;
-- Switch;
-- Sway-attributed Switch.
+- Swayed actions.
 
 Boost should mainly power ranking and aggregate counts. It should not be sprayed into the global timeline as one event per Boost.
 
@@ -130,7 +131,7 @@ Boost should mainly power ranking and aggregate counts. It should not be sprayed
 - No N-option topics yet.
 - No topic statuses beyond `active` and `inactive`.
 - No side mutation on historical Says.
-- No Sway without an actual Switch.
+- No Sway count without a successful `Swayed` action that changes Pick.
 - No automated attribution from views, likes, or comments.
 - No punishment columns on Topic.
 - No formal Challenge winner or verdict.
@@ -140,5 +141,5 @@ Boost should mainly power ranking and aggregate counts. It should not be sprayed
 - Define exact `Mark` labels.
 - Define Challenge reply depth.
 - Define ranking weights for Say lists.
-- Decide whether Switch requires `case_text`.
+- Decide whether `Swayed` requires `case_text`.
 - Refine report/admin workflow from `Pick_One_MVP_Safety_Rules.md`.
