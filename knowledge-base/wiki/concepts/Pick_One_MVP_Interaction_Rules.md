@@ -38,18 +38,18 @@ A user has one current Pick per topic.
 
 When a user taps `Swayed` on a Say:
 
-- create a durable Pick-change event;
+- create a durable `Swayed` event;
 - update the user's current Pick to the Say's side;
 - preserve previous Pick history;
 - attach the Say as the change source;
 - increment that Say's `sway_count`.
 
-`Switch` may remain an internal event or analytics name, but it is not a user-facing product term. The user-facing action is `Swayed`.
+`Swayed` is the single name for this action across product, events, and data.
 
 Suggested event shape:
 
 ```ts
-PickChange({
+Swayed({
   topic_id,
   user_id,
   from_pick,
@@ -79,7 +79,7 @@ The Say side must not change when the author later changes Pick. This keeps old 
 - the Say was not written by the user tapping `Swayed`;
 - the Say is visible and eligible at action time.
 
-When valid, the Say gets `sway_count + 1`, or an equivalent derived count from the Pick-change event log.
+When valid, the Say gets `sway_count + 1`, or an equivalent derived count from the `Swayed` event log.
 
 MVP UI copy:
 

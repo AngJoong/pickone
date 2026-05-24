@@ -111,9 +111,9 @@ MVP controls:
 - The Say must support the side the user is moving to.
 - Users cannot tap `Swayed` on their own Say.
 - Hidden or ineligible Says cannot receive new Swayed actions.
-- One user can credit a given Say with Sway at most once per topic.
+- One user can add Sway count to a given Say at most once per topic.
 
-Do not infer Sway from views, likes, comments, or reading order. Attribution must come from an explicit `Swayed` action.
+Do not infer Sway count from views, likes, comments, or reading order. Attribution must come from an explicit `Swayed` action.
 
 ## Account And Privacy
 
@@ -150,7 +150,7 @@ Global timeline should be selective:
 
 - show meaningful Say, Challenge, and Swayed events;
 - avoid one event per Boost;
-- avoid flooding repeated Pick-change events from the same user;
+- avoid flooding repeated Swayed events from the same user;
 - hide events tied to hidden or ineligible content;
 - avoid report and punishment events in public timeline.
 
