@@ -18,8 +18,12 @@ Pick One MVP is an account-based 1:1 choice arena. Users pick one side, write sh
 - Topics are curated/admin-seeded only.
 - MVP topics are 1:1 choices.
 - Topic status is only `active` or `inactive`.
+- `active` topics are visible to users and allow participation.
+- `inactive` topics are private to normal users and excluded from feeds, search, detail pages, and global timelines.
 - `inactive` covers not-yet-public, temporarily disabled, and taken-down topics.
+- Admin users may preview or review inactive topics.
 - Deleting a topic is a separate destructive action, not a topic status.
+- `locked` is not an MVP topic status.
 - Moderation and punishment state must live in separate future tables, not topic columns.
 
 ## Core Actions
@@ -28,13 +32,37 @@ Pick One MVP is an account-based 1:1 choice arena. Users pick one side, write sh
 - `Say`: a short argument or opinion written for the user's current side.
 - `ReSay`: UI language for a reply Say. It is still stored as `Say`.
 - `Boost`: support signal for a Say from the same side.
-- `Mark`: lightweight meta reaction, separate from Report.
 - `Swayed`: button label on a Say. When successful, it changes the user's Pick to the Say's side.
 - `Sway count` / `sway_count`: the number of successful `Swayed` actions credited to a Say.
 
 ## Pick And Swayed
 
 A user has one current Pick per topic.
+
+Users may manually change Pick on an active topic.
+
+Manual Pick change rules:
+
+- update the user's current Pick;
+- preserve previous Pick history;
+- store `source = "manual"`;
+- do not attach a Say as the change source;
+- do not increment any Say's `sway_count`;
+- do not appear in the global timeline by default.
+
+Suggested Pick history shape:
+
+```ts
+PickHistory({
+  topic_id,
+  user_id,
+  from_pick,
+  to_pick,
+  source: "manual" | "swayed",
+  source_say_id?: string,
+  created_at
+})
+```
 
 When a user taps `Swayed` on a Say:
 
@@ -140,6 +168,44 @@ A ReSay may support the same side or push against the opposite side. The side is
 
 A ReSay is still a Say, so it can receive Boost and Swayed actions under the same validation rules.
 
+## Topic Detail Flow
+
+Topic detail centers on this loop:
+
+```text
+Pick -> Say/ReSay -> Swayed by an opposite-side Say -> Pick changes
+```
+
+Active topic, no Pick:
+
+- show the topic question and both side choices;
+- allow reading visible Say and ReSay lists;
+- require Pick before Say, ReSay, Boost, or Swayed;
+- allow Report for signed-in users.
+
+Active topic, Pick selected:
+
+- show the current Pick at the top of the screen;
+- allow manual Pick change;
+- create new Say only for the user's current Pick side;
+- show ReSay under each Say with the 2-depth rules above;
+- show Swayed only on eligible opposite-side Say/ReSay not authored by the user.
+
+Swayed success:
+
+- create the `Swayed` event;
+- update the current Pick to the Say side;
+- increment the source Say/ReSay `sway_count`;
+- show the source as the Say that swayed the user;
+- keep the optional reason prompt skippable.
+
+Inactive topic:
+
+- do not expose to normal users in feeds, search, detail pages, or global timelines;
+- preserve internal records;
+- allow admin preview or review only;
+- block Pick, manual Pick change, Say, ReSay, Boost, and Swayed.
+
 ## Timeline Rules
 
 Pick One needs both a personal timeline and a global timeline.
@@ -147,6 +213,7 @@ Pick One needs both a personal timeline and a global timeline.
 Personal timeline should show the signed-in user's topic journey:
 
 - Pick;
+- manual Pick changes;
 - Swayed actions;
 - own Say;
 - own ReSay;
@@ -170,15 +237,18 @@ Boost should mainly power ranking and aggregate counts. It should not be sprayed
 - No user-suggested topics.
 - No N-option topics yet.
 - No topic statuses beyond `active` and `inactive`.
+- No `locked` topic status yet.
+- No public read-only topic archive yet.
 - No side mutation on historical Says.
 - No Sway count without a successful `Swayed` action that changes Pick.
+- No Sway count from manual Pick changes.
 - No automated attribution from views, likes, or comments.
 - No punishment columns on Topic.
+- No `Mark` action in MVP.
 - No formal rebuttal winner or verdict.
 - No true 3-depth Say reply tree.
 
 ## Open Next Decisions
 
-- Define exact `Mark` labels.
 - Define ranking weights for Say lists.
 - Refine report/admin workflow from `Pick_One_MVP_Safety_Rules.md`.

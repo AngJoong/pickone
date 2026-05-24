@@ -47,7 +47,12 @@ Suggested report reasons:
 
 ## Content Visibility And Eligibility
 
-Topic lifecycle stays `active | inactive`. Individual content uses separate visibility and eligibility controls.
+Topic lifecycle stays `active | inactive`.
+
+- `active`: visible to normal users and open for participation.
+- `inactive`: private to normal users, excluded from feeds, search, detail pages, and global timelines, with admin preview/review only.
+
+Individual content uses separate visibility and eligibility controls.
 
 For Say and ReSay:
 
@@ -116,6 +121,8 @@ MVP controls:
 
 Do not infer Sway count from views, likes, comments, or reading order. Attribution must come from an explicit `Swayed` action.
 
+Manual Pick changes are allowed, but they are not `Swayed` actions. They must not increment `sway_count`, must not attach a Say attribution source, and should stay out of the global timeline by default.
+
 ## Account And Privacy
 
 Pick One is main-account based, but public exposure should still be deliberate.
@@ -126,6 +133,7 @@ MVP rules:
 - Internal audit logs keep actor, target, action, and timestamp.
 - Public UI should not expose report authors.
 - Personal timeline can show the signed-in user's full topic journey.
+- Manual Pick changes can appear in the signed-in user's personal timeline and internal audit logs.
 - Global timeline should avoid stalking-style per-user activity trails.
 - Deleted account behavior is a later policy decision.
 
@@ -150,9 +158,11 @@ Personal timeline may show detailed self-history.
 Global timeline should be selective:
 
 - show meaningful Say, ReSay, and Swayed events;
+- do not show manual Pick changes by default;
 - avoid one event per Boost;
 - avoid flooding repeated Swayed events from the same user;
 - hide events tied to hidden or ineligible content;
+- hide events tied to inactive topics from normal users;
 - avoid report and punishment events in public timeline.
 
 ## MVP Non-Goals
@@ -163,7 +173,9 @@ Global timeline should be selective:
 - No public shame badges.
 - No deep Say reply trees.
 - No Sway count without explicit `Swayed` action.
+- No Sway count from manual Pick changes.
 - No ranking system that uses only raw Boost or Sway counts.
+- No `locked` topic status in MVP.
 
 ## Open Next Decisions
 
