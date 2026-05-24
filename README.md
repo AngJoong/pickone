@@ -1,0 +1,10 @@
+# Pick One
+
+Pick one. Make your case.
+
+Pick One is an account-based 1:1 choice arena for fast opinion battles. The MVP starts with curated topics, durable account history, side switching, short arguments, challenges, and Sway attribution.
+
+## Knowledge Base
+
+- `knowledge-base/wiki/concepts/Pick_One_MVP_Interaction_Rules.md`
+- `knowledge-base/wiki/concepts/Pick_One_MVP_Safety_Rules.md`
