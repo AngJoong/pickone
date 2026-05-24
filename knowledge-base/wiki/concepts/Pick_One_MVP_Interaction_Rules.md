@@ -60,6 +60,8 @@ Swayed({
 })
 ```
 
+`case_text` is optional. A valid `Swayed` action must succeed without written case text. The event stores `case_text` only when the user chooses to add an optional reason.
+
 ## Say Rules
 
 A Say belongs to:
@@ -78,6 +80,7 @@ The Say side must not change when the author later changes Pick. This keeps old 
 - the Say was written for the opposite side from the user's current Pick;
 - the Say was not written by the user tapping `Swayed`;
 - the Say is visible and eligible at action time.
+- `case_text` is not required for validation.
 
 When valid, the Say gets `sway_count + 1`, or an equivalent derived count from the `Swayed` event log.
 
@@ -86,6 +89,7 @@ MVP UI copy:
 - Button: `Swayed`
 - Korean count: `이 Say로 {n}명이 선택을 바꿨어요`
 - English count: `{n} Sways`
+- Optional post-success prompt: ask why the Say swayed the user, but skipping it must not undo or block `Swayed`.
 
 ## Challenge Rules
 
@@ -141,5 +145,4 @@ Boost should mainly power ranking and aggregate counts. It should not be sprayed
 - Define exact `Mark` labels.
 - Define Challenge reply depth.
 - Define ranking weights for Say lists.
-- Decide whether `Swayed` requires `case_text`.
 - Refine report/admin workflow from `Pick_One_MVP_Safety_Rules.md`.

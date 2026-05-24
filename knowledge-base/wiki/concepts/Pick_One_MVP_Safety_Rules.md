@@ -112,6 +112,7 @@ MVP controls:
 - Users cannot tap `Swayed` on their own Say.
 - Hidden or ineligible Says cannot receive new Swayed actions.
 - One user can add Sway count to a given Say at most once per topic.
+- Missing `case_text` must not make a valid `Swayed` action suspicious by itself.
 
 Do not infer Sway count from views, likes, comments, or reading order. Attribution must come from an explicit `Swayed` action.
 
@@ -168,7 +169,6 @@ Global timeline should be selective:
 
 - Exact Challenge reply depth.
 - Exact report reason taxonomy.
-- Whether `Swayed` requires `case_text`.
 - First ranking formula for Say lists.
 - Initial reviewer/admin workflow.
 - Account deletion and content retention policy.
