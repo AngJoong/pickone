@@ -50,6 +50,8 @@ function rowToUser(row) {
     id: row.id,
     handle: row.handle,
     displayName: row.display_name,
+    email: row.email ?? null,
+    authProvider: row.auth_provider ?? null,
     isAdmin: bool(row.is_admin),
   };
 }
@@ -115,6 +117,9 @@ function migrate(db) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       handle TEXT NOT NULL UNIQUE,
       display_name TEXT NOT NULL,
+      auth_provider TEXT,
+      auth_subject TEXT,
+      email TEXT,
       is_admin INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL
     );
@@ -199,7 +204,29 @@ function migrate(db) {
       created_at TEXT NOT NULL,
       UNIQUE(reporter_id, target_type, target_id, reason)
     );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      token TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL
+    );
   `);
+  ensureColumn(db, 'users', 'auth_provider', 'TEXT');
+  ensureColumn(db, 'users', 'auth_subject', 'TEXT');
+  ensureColumn(db, 'users', 'email', 'TEXT');
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS users_auth_identity_idx
+    ON users(auth_provider, auth_subject)
+    WHERE auth_provider IS NOT NULL AND auth_subject IS NOT NULL;
+  `);
+}
+
+function ensureColumn(db, tableName, columnName, definition) {
+  const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
+  if (!columns.some((column) => column.name === columnName)) {
+    db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition};`);
+  }
 }
 
 function seed(db) {
@@ -335,8 +362,24 @@ function runTransaction(db, fn) {
   }
 }
 
+function normalizeHandle(value) {
+  return String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 32);
+}
+
+function uniqueHandle(db, value) {
+  const base = normalizeHandle(value) || 'user';
+  let handle = base;
+  let suffix = 2;
+  while (db.prepare('SELECT id FROM users WHERE handle = ?').get(handle)) {
+    const ending = `-${suffix}`;
+    handle = `${base.slice(0, 32 - ending.length)}${ending}`;
+    suffix += 1;
+  }
+  return handle;
+}
+
 export function createUser(db, { handle, displayName }) {
-  const cleanHandle = cleanText(handle, 'handle', 32).toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  const cleanHandle = normalizeHandle(cleanText(handle, 'handle', 32));
   if (!cleanHandle) throw new AppError(400, 'invalid_handle', 'Handle must include letters or numbers.');
   const name = cleanText(displayName || handle, 'displayName', 48);
   try {
@@ -351,6 +394,64 @@ export function createUser(db, { handle, displayName }) {
     }
     throw error;
   }
+}
+
+export function upsertOAuthUser(db, { provider, subject, email, displayName }) {
+  const cleanProvider = cleanText(provider, 'provider', 24);
+  const cleanSubject = cleanText(subject, 'subject', 160);
+  const cleanEmail = optionalText(email, 160);
+  const name = cleanText(displayName || cleanEmail || `${cleanProvider} user`, 'displayName', 48);
+  const existing = db.prepare(`
+    SELECT * FROM users
+    WHERE auth_provider = ? AND auth_subject = ?
+  `).get(cleanProvider, cleanSubject);
+
+  if (existing) {
+    db.prepare(`
+      UPDATE users
+      SET display_name = ?, email = ?
+      WHERE id = ?
+    `).run(name, cleanEmail, existing.id);
+    return rowToUser(db.prepare('SELECT * FROM users WHERE id = ?').get(existing.id));
+  }
+
+  const handle = uniqueHandle(db, cleanEmail?.split('@')[0] || name);
+  const id = Number(db.prepare(`
+    INSERT INTO users (handle, display_name, auth_provider, auth_subject, email, is_admin, created_at)
+    VALUES (?, ?, ?, ?, ?, 0, ?)
+  `).run(handle, name, cleanProvider, cleanSubject, cleanEmail, now()).lastInsertRowid);
+  return rowToUser(db.prepare('SELECT * FROM users WHERE id = ?').get(id));
+}
+
+export function createSession(db, { token, userId, expiresAt }) {
+  cleanText(token, 'token', 128);
+  requireUser(db, userId);
+  const expiry = cleanText(expiresAt, 'expiresAt', 64);
+  db.prepare('DELETE FROM sessions WHERE expires_at <= ?').run(now());
+  db.prepare(`
+    INSERT OR REPLACE INTO sessions (token, user_id, created_at, expires_at)
+    VALUES (?, ?, ?, ?)
+  `).run(token, userId, now(), expiry);
+  return { token, userId, expiresAt: expiry };
+}
+
+export function getSessionUser(db, token) {
+  const cleanToken = optionalText(token, 128);
+  if (!cleanToken) return null;
+  db.prepare('DELETE FROM sessions WHERE expires_at <= ?').run(now());
+  const row = db.prepare(`
+    SELECT u.*
+    FROM sessions s
+    JOIN users u ON u.id = s.user_id
+    WHERE s.token = ? AND s.expires_at > ?
+  `).get(cleanToken, now());
+  return rowToUser(row);
+}
+
+export function deleteSession(db, token) {
+  const cleanToken = optionalText(token, 128);
+  if (!cleanToken) return;
+  db.prepare('DELETE FROM sessions WHERE token = ?').run(cleanToken);
 }
 
 export function listUsers(db) {

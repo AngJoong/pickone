@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   AppError,
+  createSession,
   createSay,
+  getSessionUser,
   getAppState,
   getTopicDetail,
   openDatabase,
@@ -10,6 +12,7 @@ import {
   submitReport,
   submitSwayed,
   toggleBoost,
+  upsertOAuthUser,
 } from '../src/store.js';
 
 function freshDb() {
@@ -164,4 +167,29 @@ test('hidden or ineligible Says cannot receive ReSay, Boost, or Swayed', () => {
   }), AppError);
   assert.throws(() => toggleBoost(db, { sayId: oppositeSay.id, userId: 2 }), AppError);
   assert.throws(() => submitSwayed(db, { sayId: oppositeSay.id, userId: 1 }), AppError);
+});
+
+test('OAuth users are reused by provider identity and can create sessions', () => {
+  const db = freshDb();
+  const first = upsertOAuthUser(db, {
+    provider: 'google',
+    subject: 'google-subject-1',
+    email: 'pick@example.com',
+    displayName: 'Pick User',
+  });
+  const second = upsertOAuthUser(db, {
+    provider: 'google',
+    subject: 'google-subject-1',
+    email: 'pick@example.com',
+    displayName: 'Pick User Renamed',
+  });
+  assert.equal(second.id, first.id);
+  assert.equal(second.displayName, 'Pick User Renamed');
+
+  createSession(db, {
+    token: 'test-session-token',
+    userId: first.id,
+    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+  });
+  assert.equal(getSessionUser(db, 'test-session-token').id, first.id);
 });

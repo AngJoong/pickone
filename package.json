@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node --no-warnings src/server.js",
     "start": "node --no-warnings src/server.js",
-    "check": "node --check src/server.js && node --check src/store.js && node --check tests/mvp.test.js",
+    "check": "node --check src/server.js && node --check src/store.js && node --check src/oauth.js && node --check public/app.js && node --check tests/mvp.test.js && node --check tests/oauth.test.js",
     "test": "node --no-warnings --test tests/*.test.js"
   },
   "engines": {
