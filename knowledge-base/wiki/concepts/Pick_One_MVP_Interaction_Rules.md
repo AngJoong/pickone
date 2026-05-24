@@ -1,14 +1,14 @@
 # Pick One MVP Interaction Rules
 
 Status: MVP decision draft
-Date: 2026-05-24
+Date: 2026-05-25
 Domain: pickone.antabear.com
 Tagline: Pick one. Make your case.
 Related safety rules: `Pick_One_MVP_Safety_Rules.md`
 
 ## Scope
 
-Pick One MVP is an account-based 1:1 choice arena. Users pick one side, write short cases, react to arguments, challenge specific claims, and may later be swayed by a Say from the other side. The product should feel light and fast, but the account history remains durable.
+Pick One MVP is an account-based 1:1 choice arena. Users pick one side, write short cases, reply to arguments, react to arguments, and may later be swayed by a Say from the other side. The product should feel light and fast, but the account history remains durable.
 
 ## Product Rules
 
@@ -26,8 +26,8 @@ Pick One MVP is an account-based 1:1 choice arena. Users pick one side, write sh
 
 - `Pick`: the user's current side on a topic.
 - `Say`: a short argument or opinion written for the user's current side.
+- `ReSay`: UI language for a reply Say. It is still stored as `Say`.
 - `Boost`: support signal for a Say from the same side.
-- `Challenge`: direct rebuttal against a specific Say.
 - `Mark`: lightweight meta reaction, separate from Report.
 - `Swayed`: button label on a Say. When successful, it changes the user's Pick to the Say's side.
 - `Sway count` / `sway_count`: the number of successful `Swayed` actions credited to a Say.
@@ -68,9 +68,25 @@ A Say belongs to:
 
 - one topic;
 - one author;
-- one side snapshot at creation time.
+- one side snapshot at creation time;
+- optionally one parent Say.
 
 The Say side must not change when the author later changes Pick. This keeps old arguments historically honest and prevents timeline items from changing meaning.
+
+Suggested Say shape:
+
+```ts
+Say({
+  id,
+  topic_id,
+  author_id,
+  side_id,
+  parent_say_id?: string,
+  reply_to_say_id?: string,
+  body,
+  created_at
+})
+```
 
 ## Swayed Validation
 
@@ -79,7 +95,7 @@ The Say side must not change when the author later changes Pick. This keeps old 
 - the Say belongs to the same topic;
 - the Say was written for the opposite side from the user's current Pick;
 - the Say was not written by the user tapping `Swayed`;
-- the Say is visible and eligible at action time.
+- the Say is visible and eligible at action time;
 - `case_text` is not required for validation.
 
 When valid, the Say gets `sway_count + 1`, or an equivalent derived count from the `Swayed` event log.
@@ -91,18 +107,38 @@ MVP UI copy:
 - English count: `{n} Sways`
 - Optional post-success prompt: ask why the Say swayed the user, but skipping it must not undo or block `Swayed`.
 
-## Challenge Rules
+## ReSay Rules
 
-Challenge targets a Say, not a user, topic, or side in general.
+ReSay is a reply Say, not a separate content type.
 
-MVP challenge meaning:
+MVP reply depth:
 
-- "I challenge this argument."
-- No formal winner.
-- No judge system.
-- No deep infinite debate tree.
+- 1-depth Say: directly under a Topic.
+- 2-depth ReSay: reply under a 1-depth Say.
+- No true 3-depth reply tree.
 
-This keeps conflict anchored to a concrete claim and avoids vague side-level fighting.
+When a user replies to a 2-depth ReSay:
+
+- create another 2-depth ReSay under the same 1-depth parent Say;
+- set `parent_say_id` to the 1-depth parent Say;
+- set `reply_to_say_id` to the 2-depth ReSay being answered;
+- show the target in UI with `@target` or "replying to target" copy.
+
+Example:
+
+```text
+A's Say
+  B's ReSay
+  C's ReSay, replying to B
+```
+
+In this example, both B and C have `parent_say_id = A`. C also has `reply_to_say_id = B`.
+
+This preserves the user's intent to answer a specific ReSay without turning MVP into a deep debate tree.
+
+A ReSay may support the same side or push against the opposite side. The side is determined by the author's current Pick at creation time.
+
+A ReSay is still a Say, so it can receive Boost and Swayed actions under the same validation rules.
 
 ## Timeline Rules
 
@@ -113,7 +149,7 @@ Personal timeline should show the signed-in user's topic journey:
 - Pick;
 - Swayed actions;
 - own Say;
-- own Challenge;
+- own ReSay;
 - Boost activity relevant to own Say;
 - Sway count credited to own Say;
 - responses to own Say.
@@ -121,7 +157,7 @@ Personal timeline should show the signed-in user's topic journey:
 Global timeline should stay selective:
 
 - meaningful Say;
-- Challenge;
+- meaningful ReSay;
 - Swayed actions.
 
 Boost should mainly power ranking and aggregate counts. It should not be sprayed into the global timeline as one event per Boost.
@@ -138,11 +174,11 @@ Boost should mainly power ranking and aggregate counts. It should not be sprayed
 - No Sway count without a successful `Swayed` action that changes Pick.
 - No automated attribution from views, likes, or comments.
 - No punishment columns on Topic.
-- No formal Challenge winner or verdict.
+- No formal rebuttal winner or verdict.
+- No true 3-depth Say reply tree.
 
 ## Open Next Decisions
 
 - Define exact `Mark` labels.
-- Define Challenge reply depth.
 - Define ranking weights for Say lists.
 - Refine report/admin workflow from `Pick_One_MVP_Safety_Rules.md`.

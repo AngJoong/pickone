@@ -2,7 +2,7 @@
 
 Pick one. Make your case.
 
-Pick One is an account-based 1:1 choice arena for fast opinion battles. The MVP starts with curated topics, durable account history, short arguments, challenges, and the `Swayed` action that lets a Say change a user's Pick.
+Pick One is an account-based 1:1 choice arena for fast opinion battles. The MVP starts with curated topics, durable account history, short Says, shallow ReSays, and the `Swayed` action that lets a Say change a user's Pick.
 
 ## Knowledge Base
 

@@ -1,20 +1,20 @@
 # Pick One MVP Safety Rules
 
 Status: MVP decision draft
-Date: 2026-05-24
+Date: 2026-05-25
 Owner: Cheda
 Related: `Pick_One_MVP_Interaction_Rules.md`
 
 ## Scope
 
-Pick One is a debate-shaped social product, so safety must cover more than technical security. MVP safety includes abuse prevention, reporting, content visibility, ranking integrity, privacy, and manipulation controls around `Pick`, `Say`, `Boost`, `Challenge`, `Swayed`, and `sway_count`.
+Pick One is a debate-shaped social product, so safety must cover more than technical security. MVP safety includes abuse prevention, reporting, content visibility, ranking integrity, privacy, and manipulation controls around `Pick`, `Say`, `ReSay`, `Boost`, `Swayed`, and `sway_count`.
 
 ## Safety Principles
 
 - Keep participation light, but keep account responsibility durable.
 - Separate product reactions from safety actions.
 - Do not use public shame mechanics for safety.
-- Do not let ranking, Boost, `Swayed`, or Challenge reward harassment or coordinated pile-ons.
+- Do not let ranking, Boost, ReSay, or `Swayed` reward harassment or coordinated pile-ons.
 - Store moderation and punishment outside topic columns.
 - Prefer reversible visibility controls before irreversible destructive actions.
 
@@ -26,7 +26,6 @@ Report targets may include:
 
 - Topic;
 - Say;
-- Challenge;
 - user account.
 
 MVP report behavior:
@@ -50,37 +49,38 @@ Suggested report reasons:
 
 Topic lifecycle stays `active | inactive`. Individual content uses separate visibility and eligibility controls.
 
-For Say and Challenge:
+For Say and ReSay:
 
 - `visible`: can appear in feeds and timelines;
 - `hidden`: not shown in public feeds;
-- `eligible`: can receive Boost, Challenge, and Swayed actions;
+- `eligible`: can receive Boost, ReSay, and Swayed actions;
 - `ineligible`: visible or hidden content is excluded from ranking and attribution.
 
 Safety rule:
 
 - Hidden content is always ineligible.
-- Ineligible content must not receive new Boost, Challenge, or Swayed actions.
+- Ineligible content must not receive new Boost, ReSay, or Swayed actions.
 - Existing event history should remain auditable even when content becomes hidden.
 
 This keeps moderation from rewriting product history while preventing unsafe content from gaining more distribution.
 
-## Challenge Abuse Controls
+## ReSay Abuse Controls
 
-Challenge targets a Say, not a person.
+ReSay targets a Say, not a person.
 
 MVP controls:
 
-- A Challenge must reference exactly one Say.
-- A user cannot repeatedly Challenge the same Say.
-- Challenge reply depth should stay shallow for MVP.
-- Challenge copy and UI should avoid person-targeting language.
-- Challenges against hidden or ineligible Says are blocked.
-- A Challenge from a blocked or enforcement-limited user is blocked.
+- A ReSay is stored as `Say`.
+- A 1-depth Say has no `parent_say_id`.
+- A 2-depth ReSay must reference one 1-depth parent Say through `parent_say_id`.
+- A true 3-depth reply tree is blocked for MVP.
+- Replying to a 2-depth ReSay creates another 2-depth ReSay under the same parent Say.
+- The specific 2-depth ReSay being answered is preserved with `reply_to_say_id`.
+- ReSay copy and UI should avoid person-targeting language.
+- ReSay against hidden or ineligible Says is blocked.
+- ReSay from a blocked or enforcement-limited user is blocked.
 
-Open decision:
-
-- Exact reply depth: recommended default is one Challenge plus one response.
+This keeps conflict anchored to a concrete Say while avoiding deep pile-on trees.
 
 ## Boost Integrity
 
@@ -149,7 +149,7 @@ Personal timeline may show detailed self-history.
 
 Global timeline should be selective:
 
-- show meaningful Say, Challenge, and Swayed events;
+- show meaningful Say, ReSay, and Swayed events;
 - avoid one event per Boost;
 - avoid flooding repeated Swayed events from the same user;
 - hide events tied to hidden or ineligible content;
@@ -161,13 +161,12 @@ Global timeline should be selective:
 - No automatic punishment from report volume alone.
 - No formal moderation court or public verdict system.
 - No public shame badges.
-- No deep Challenge debate trees.
+- No deep Say reply trees.
 - No Sway count without explicit `Swayed` action.
 - No ranking system that uses only raw Boost or Sway counts.
 
 ## Open Next Decisions
 
-- Exact Challenge reply depth.
 - Exact report reason taxonomy.
 - First ranking formula for Say lists.
 - Initial reviewer/admin workflow.
