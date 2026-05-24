@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pick One</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <header class="topbar">
+        <div class="brand-lockup" aria-label="Pick One">
+          <div class="brand-mark">P1</div>
+          <div>
+            <h1>Pick One</h1>
+            <p>Pick one. Make your case.</p>
+          </div>
+        </div>
+        <div class="account-panel">
+          <label for="user-select">Account</label>
+          <select id="user-select"></select>
+          <form id="signup-form" class="signup-form">
+            <input id="signup-handle" name="handle" autocomplete="off" placeholder="new handle">
+            <button type="submit">Sign up</button>
+          </form>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <aside class="rail">
+          <section>
+            <div class="section-title">Topics</div>
+            <div id="topic-list" class="topic-list"></div>
+          </section>
+          <section>
+            <div class="section-title">Global</div>
+            <div id="global-timeline" class="timeline"></div>
+          </section>
+        </aside>
+
+        <section id="topic-detail" class="topic-detail"></section>
+
+        <aside class="rail rail-right">
+          <section>
+            <div class="section-title">Personal</div>
+            <div id="personal-timeline" class="timeline"></div>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
