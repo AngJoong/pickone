@@ -275,7 +275,13 @@ function seed(db) {
   };
   const boostOnce = (sayId, userId) => {
     const existing = db.prepare('SELECT id FROM boosts WHERE say_id = ? AND user_id = ?').get(sayId, userId);
-    if (!existing) toggleBoost(db, { sayId, userId });
+    if (!existing) {
+      try {
+        toggleBoost(db, { sayId, userId });
+      } catch (error) {
+        if (!(error instanceof AppError)) throw error;
+      }
+    }
   };
   const swayedOnce = (sayId, userId, caseText) => {
     const say = db.prepare('SELECT topic_id FROM says WHERE id = ?').get(sayId);
@@ -283,7 +289,13 @@ function seed(db) {
       SELECT id FROM swayed
       WHERE topic_id = ? AND user_id = ? AND sway_say_id = ?
     `).get(say.topic_id, userId, sayId);
-    if (!existing) submitSwayed(db, { sayId, userId, caseText });
+    if (!existing) {
+      try {
+        submitSwayed(db, { sayId, userId, caseText });
+      } catch (error) {
+        if (!(error instanceof AppError)) throw error;
+      }
+    }
   };
 
   const joonId = ensureUser('joon', 'Joon');
@@ -373,6 +385,9 @@ function seed(db) {
     const hybrid = sayAt(createSay(db, { topicId: remoteId, userId: ariId, body: 'Default remote does not mean never meet. It means presence has to justify itself.' }), 39);
     boostOnce(hybrid.id, nariId);
     swayedOnce(remoteAccess.id, ariId, 'Access should be the default, office should be intentional.');
+    swayedOnce(deepWork.id, nariId, 'I can defend mentoring days without making office the default.');
+    swayedOnce(context.id, theoId, 'Quiet blockers are real enough to keep office as the default.');
+    swayedOnce(hybrid.id, minId, 'Presence should justify itself, but the default can still be office.');
   });
 
   seedSaysWhenSparse(sportsId, 7, () => {

@@ -188,6 +188,10 @@ function time(value) {
   }).format(new Date(value));
 }
 
+function clampNumber(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
 function icon(name) {
   const paths = {
     support: '<path d="M7 10v10"/><path d="M15 6.5 14 10h5.5l-1.2 8.4A2 2 0 0 1 16.3 20H7V10l4.2-6.3A1.8 1.8 0 0 1 14.5 5l.5 1.5Z"/>',
@@ -422,12 +426,76 @@ function renderTensionMeter(topic) {
 }
 
 function renderTopicSays(topic) {
+  if (topic.sides.length !== 2) {
+    return `
+      <section class="arguments-section">
+        <div class="lanes">
+          ${topic.sides.map((side, index) => renderLane(topic, side, index)).join('')}
+        </div>
+      </section>
+    `;
+  }
+
   return `
     <section class="arguments-section">
-      <div class="lanes">
-        ${topic.sides.map((side, index) => renderLane(topic, side, index)).join('')}
+      <div class="sway-field">
+        ${renderFieldLane(topic, topic.sides[0], 0)}
+        ${renderFlowCore(topic)}
+        ${renderFieldLane(topic, topic.sides[1], 1)}
       </div>
     </section>
+  `;
+}
+
+function sayMetrics(say) {
+  const replyCount = say.replies?.length || 0;
+  const pressure = clampNumber(1 + say.boostCount * 0.18 + replyCount * 0.08, 1, 1.9);
+  const pull = clampNumber(say.swayCount * 18 + say.boostCount * 3 + replyCount * 2, 0, 42);
+  const bridge = clampNumber(22 + say.swayCount * 26 + say.boostCount * 4, 22, 120);
+  const flowHeight = clampNumber(3 + say.swayCount * 4, 3, 18);
+  const edgeWidth = clampNumber(Math.round(4 + pressure * 2), 5, 8);
+  const halo = clampNumber(Math.round(flowHeight / 2), 2, 9);
+  return { pressure, pull, bridge, flowHeight, edgeWidth, halo };
+}
+
+function renderFieldLane(topic, side, index) {
+  const says = topic.says.filter((say) => say.sideId === side.id);
+  return `
+    <div class="field-lane field-${index === 0 ? 'left' : 'right'}" style="--side-color:${esc(side.color)}">
+      <div class="field-lane-head">
+        <span><span class="dot" style="background:${esc(side.color)}"></span>${esc(side.label)}</span>
+        <span>${esc(t('sideStats', { picks: side.pickCount, says: says.length }))}</span>
+      </div>
+      <div class="field-says">
+        ${says.map((say) => renderSay(topic, say, false)).join('') || `<div class="empty-state">${t('noSays')}</div>`}
+      </div>
+    </div>
+  `;
+}
+
+function renderFlowCore(topic) {
+  const swaying = topic.says
+    .filter((say) => say.swayCount > 0)
+    .sort((a, b) => b.swayCount - a.swayCount || b.boostCount - a.boostCount)
+    .slice(0, 8);
+  const maxSway = Math.max(1, ...swaying.map((say) => say.swayCount));
+  const ribbons = swaying.map((say, index) => {
+    const sideIndex = topic.sides.findIndex((side) => side.id === say.sideId);
+    const top = swaying.length === 1 ? 50 : 16 + (index * (68 / Math.max(1, swaying.length - 1)));
+    const size = clampNumber(5 + Math.round((say.swayCount / maxSway) * 14), 5, 19);
+    return `
+      <span
+        class="flow-ribbon ${sideIndex === 0 ? 'from-left' : 'from-right'}"
+        style="--side-color:${esc(say.sideColor)}; --flow-top:${top}%; --flow-size:${size}px"
+      ></span>
+    `;
+  }).join('');
+
+  return `
+    <div class="field-core" aria-hidden="true">
+      <span class="core-boundary"></span>
+      ${ribbons}
+    </div>
   `;
 }
 
@@ -471,8 +539,19 @@ function renderSay(topic, say, isReply) {
   const canBoost = canParticipate && !isOwn && say.sideId === currentPick.sideId && say.eligible;
   const canSwayed = canParticipate && !isOwn && say.sideId !== currentPick.sideId && say.eligible;
   const replyLabel = isReply && say.replyToAuthorName ? `<span class="reply-target">@${esc(say.replyToAuthorName)}</span>` : '';
+  const sideIndex = topic.sides.findIndex((side) => side.id === say.sideId);
+  const metrics = sayMetrics(say);
+  const cardClasses = [
+    'say-card',
+    isReply ? 'reply' : 'root-say',
+    say.swayCount > 0 ? 'swaying' : '',
+    sideIndex === 0 ? 'from-left' : 'from-right',
+  ].filter(Boolean).join(' ');
   return `
-    <article class="say-card ${isReply ? 'reply' : ''}" style="--say-color:${esc(say.sideColor)}; border-left-color:${esc(say.sideColor)}">
+    <article
+      class="${cardClasses}"
+      style="--say-color:${esc(say.sideColor)}; --pull:${metrics.pull}px; --bridge:${metrics.bridge}px; --flow-height:${metrics.flowHeight}px; --edge-width:${metrics.edgeWidth}px; --halo:${metrics.halo}px; border-left-color:${esc(say.sideColor)}"
+    >
       <div class="say-meta">
         <span class="side-badge"><span class="dot" style="background:${esc(say.sideColor)}"></span>${esc(say.sideLabel)}</span>
         <span>${esc(say.authorName)}</span>
@@ -489,6 +568,7 @@ function renderSay(topic, say, isReply) {
           count: say.boostCount,
           disabled: !canBoost,
           active: say.boostedByCurrentUser,
+          hideLabel: true,
         })}
         ${renderActionButton({
           className: 'swayed',
@@ -497,6 +577,7 @@ function renderSay(topic, say, isReply) {
           label: t('actionChangePick'),
           count: say.swayCount,
           disabled: !canSwayed,
+          hideLabel: true,
         })}
         ${renderActionButton({
           className: 'say',
@@ -504,6 +585,7 @@ function renderSay(topic, say, isReply) {
           iconName: 'say',
           label: t('actionSay'),
           disabled: !(canParticipate && say.eligible),
+          hideLabel: true,
         })}
         ${renderActionButton({
           className: 'report quiet',
