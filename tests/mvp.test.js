@@ -193,3 +193,16 @@ test('OAuth users are reused by provider identity and can create sessions', () =
   });
   assert.equal(getSessionUser(db, 'test-session-token').id, first.id);
 });
+
+test('app state includes richer profile sections for personal history', () => {
+  const db = freshDb();
+  const state = getAppState(db, { userId: 1 });
+
+  assert.equal(state.users.length >= 7, true);
+  assert.equal(state.topics.length >= 5, true);
+  assert.equal(state.globalTimeline.length > 0, true);
+  assert.equal(state.globalTimeline.every((item) => Number.isInteger(item.topicId)), true);
+  assert.equal(state.personalProfile.mySays.length > 0, true);
+  assert.equal(state.personalProfile.pickHistory.length > 0, true);
+  assert.equal(state.personalProfile.swayedHistory.length > 0, true);
+});

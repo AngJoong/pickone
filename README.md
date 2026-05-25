@@ -18,10 +18,11 @@ Implemented MVP flow:
 
 - demo account selection and signup;
 - curated active topics with inactive topics hidden from normal users;
+- richer demo data across multiple users, topics, Says, ReSays, Boosts, and Swayed records;
 - Pick and manual Pick changes;
 - Say and 2-depth ReSay with flattened replies;
 - Boost, Report, and Swayed actions;
-- personal and global timelines;
+- separated Topics and Activity views, plus a profile panel for personal Says, Pick history, and Swayed records;
 - Korean and English UI switching;
 - Google, Naver, and Kakao login wiring;
 - SQLite-backed local persistence in `data/pickone.sqlite`.

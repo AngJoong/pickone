@@ -19,6 +19,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   background: var(--panel);
@@ -136,6 +140,10 @@ select {
   padding: 0 8px;
 }
 
+#profile-button {
+  align-self: end;
+}
+
 .signup-form {
   display: flex;
   gap: 6px;
@@ -178,15 +186,32 @@ button.oauth-button:disabled {
 
 .workspace {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr) 280px;
+  grid-template-columns: 300px minmax(0, 1fr);
   gap: 16px;
-  max-width: 1440px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 16px;
 }
 
+.view-tabs {
+  display: flex;
+  gap: 6px;
+  grid-column: 1 / -1;
+}
+
+.view-tabs button {
+  min-width: 104px;
+}
+
+.view-tabs button.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
 .rail,
-.topic-detail {
+.topic-detail,
+.activity-view {
   min-width: 0;
 }
 
@@ -217,6 +242,8 @@ button.oauth-button:disabled {
 .pick-strip,
 .composer,
 .say-card,
+.activity-header,
+.activity-item,
 .empty-state {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -280,6 +307,67 @@ button.oauth-button:disabled {
   display: grid;
   align-content: start;
   gap: 12px;
+}
+
+.activity-view {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  grid-column: 1 / -1;
+}
+
+.activity-header {
+  padding: 18px;
+}
+
+.activity-header h2 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.12;
+}
+
+.activity-header p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.activity-list {
+  display: grid;
+  gap: 10px;
+  max-width: 760px;
+}
+
+.activity-item {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.activity-item h3,
+.activity-item p {
+  margin: 0;
+}
+
+.activity-item h3 {
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.activity-item button {
+  justify-self: start;
+}
+
+.activity-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.activity-meta strong {
+  color: var(--ink);
 }
 
 .topic-header {
@@ -483,6 +571,105 @@ button.oauth-button:disabled {
   text-align: center;
 }
 
+.profile-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 14;
+  background: rgba(25, 26, 29, 0.24);
+}
+
+.profile-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 15;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  width: min(420px, 100vw);
+  padding: 18px;
+  overflow-y: auto;
+  border-left: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: -12px 0 30px rgba(20, 24, 32, 0.16);
+}
+
+.profile-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.profile-header h2 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.15;
+}
+
+.profile-header p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.profile-section {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-section-title,
+.profile-item-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.profile-section-title {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.profile-list {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-item {
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.profile-item-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profile-item-meta strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.profile-item p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+.profile-source {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .toast {
   position: fixed;
   right: 18px;
@@ -510,11 +697,6 @@ button.oauth-button:disabled {
   .workspace {
     grid-template-columns: 240px minmax(0, 1fr);
   }
-
-  .rail-right {
-    grid-column: 1 / -1;
-    grid-row: 3;
-  }
 }
 
 @media (max-width: 760px) {
@@ -533,6 +715,7 @@ button.oauth-button:disabled {
   }
 
   .account-panel select,
+  #profile-button,
   .oauth-button,
   .signup-form input,
   .signup-form button {
@@ -561,10 +744,6 @@ button.oauth-button:disabled {
     order: 3;
   }
 
-  .rail-right > section {
-    order: 4;
-  }
-
   .side-picks,
   .lanes {
     grid-template-columns: 1fr;
@@ -576,5 +755,10 @@ button.oauth-button:disabled {
 
   .lane-title {
     position: static;
+  }
+
+  .profile-panel {
+    width: 100vw;
+    padding: 16px;
   }
 }

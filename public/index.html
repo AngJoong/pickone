@@ -28,6 +28,7 @@
             <span id="account-label">Account</span>
             <select id="user-select"></select>
           </label>
+          <button id="profile-button" type="button" data-profile-open aria-controls="profile-panel" aria-expanded="false">Profile</button>
           <form id="signup-form" class="signup-form">
             <input id="signup-handle" name="handle" autocomplete="off" placeholder="new handle">
             <button id="signup-button" type="submit">Sign up</button>
@@ -37,28 +38,24 @@
       </header>
 
       <main class="workspace">
+        <nav class="view-tabs" aria-label="Primary views">
+          <button id="topics-view-button" type="button" data-view="topics">Topics</button>
+          <button id="activity-view-button" type="button" data-view="activity">Activity</button>
+        </nav>
         <aside class="rail">
           <section>
             <div id="topics-title" class="section-title">Topics</div>
             <div id="topic-list" class="topic-list"></div>
           </section>
-          <section>
-            <div id="global-title" class="section-title">Global</div>
-            <div id="global-timeline" class="timeline"></div>
-          </section>
         </aside>
 
         <section id="topic-detail" class="topic-detail"></section>
-
-        <aside class="rail rail-right">
-          <section>
-            <div id="personal-title" class="section-title">Personal</div>
-            <div id="personal-timeline" class="timeline"></div>
-          </section>
-        </aside>
+        <section id="activity-view" class="activity-view" hidden></section>
       </main>
     </div>
 
+    <div id="profile-backdrop" class="profile-backdrop" data-profile-close hidden></div>
+    <aside id="profile-panel" class="profile-panel" role="dialog" aria-modal="true" aria-labelledby="profile-title" tabindex="-1" hidden></aside>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script type="module" src="/app.js"></script>
   </body>

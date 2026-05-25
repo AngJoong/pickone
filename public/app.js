@@ -6,6 +6,9 @@ const STRINGS = {
   en: {
     account: 'Account',
     activeTopic: 'Active topic',
+    activity: 'Activity',
+    activityEmpty: 'No activity yet.',
+    activitySubtitle: 'Recent Say, ReSay, and Swayed events across topics.',
     admin: 'admin',
     adminPreview: 'admin preview',
     authConfigHint: 'Set provider env vars to enable.',
@@ -13,13 +16,13 @@ const STRINGS = {
     boosted: 'Boosted',
     byFor: 'by {actor} for {side}',
     changeTo: 'Change to {side}',
+    close: 'Close',
     composerPlaceholder: 'Make your case for {side}',
     confirmSwayed: 'Change your Pick because of this Say?',
     currentPick: 'Current Pick: {side}',
     currentPickSnapshot: 'New Says use your current Pick snapshot.',
     emptyTopics: 'No active topics.',
     forSide: 'for {side}',
-    global: 'Global',
     inactivePreview: 'Inactive preview',
     inactiveReadOnly: 'Inactive topics are private and read-only.',
     language: 'Language',
@@ -28,20 +31,25 @@ const STRINGS = {
     loginWith: 'Continue with {provider}',
     mine: 'Mine: {side}',
     newHandle: 'new handle',
-    noEvents: 'No events yet.',
+    noMySays: 'No Says yet.',
     noPick: 'No Pick',
+    noPickHistory: 'No Pick changes yet.',
     noSays: 'No Says yet.',
+    noSwayedHistory: 'No Swayed records yet.',
     noTopic: 'No topic selected.',
     none: 'None',
     oauthNeeded: '{provider} setup needed',
-    personal: 'Personal',
+    openTopic: 'Open topic',
     pick: 'Pick',
+    pickHistory: 'Pick History',
     pickCount: '{count} Picks',
     picked: 'Picked',
     pickFirstActions: 'Pick a side before writing, Boosting, or using Swayed.',
     pickFirstCase: 'Pick first to make your case.',
     pickUpdated: 'Pick updated.',
     private: 'Private',
+    profile: 'Profile',
+    profileSubtitle: '@{handle} · {count} personal events',
     report: 'Report',
     reportReason: 'Report reason: {reasons}',
     reportSubmitted: 'Report submitted.',
@@ -53,16 +61,21 @@ const STRINGS = {
     sideStats: '{picks} Picks · {says} Says',
     signUp: 'Sign up',
     swayed: 'Swayed',
+    swayedHistory: 'Swayed',
     swayedReason: 'Optional: why did it sway you?',
     swayedRecorded: 'Swayed recorded.',
     tagline: 'Pick one. Make your case.',
     topics: 'Topics',
     writeResay: 'Write a ReSay',
+    mySays: 'My Says',
     yourSay: 'Your Say',
   },
   ko: {
     account: '계정',
     activeTopic: '진행 중 토픽',
+    activity: '활동',
+    activityEmpty: '아직 활동이 없습니다.',
+    activitySubtitle: '토픽 전체의 Say, ReSay, Swayed 흐름입니다.',
     admin: '관리자',
     adminPreview: '관리자 미리보기',
     authConfigHint: '환경 변수를 설정하면 켜집니다.',
@@ -70,13 +83,13 @@ const STRINGS = {
     boosted: 'Boosted',
     byFor: '{actor} · {side}',
     changeTo: '{side}로 변경',
+    close: '닫기',
     composerPlaceholder: '{side} 쪽 주장을 남겨주세요',
     confirmSwayed: '이 Say 때문에 Pick을 바꿀까요?',
     currentPick: '현재 Pick: {side}',
     currentPickSnapshot: '새 Say는 현재 Pick 기준으로 기록됩니다.',
     emptyTopics: '진행 중인 토픽이 없습니다.',
     forSide: '{side} 쪽',
-    global: '전체',
     inactivePreview: '비공개 미리보기',
     inactiveReadOnly: '비공개 토픽은 읽기만 가능합니다.',
     language: '언어',
@@ -85,20 +98,25 @@ const STRINGS = {
     loginWith: '{provider} 로그인',
     mine: '내 Pick: {side}',
     newHandle: '새 핸들',
-    noEvents: '아직 기록이 없습니다.',
+    noMySays: '아직 내 Say가 없습니다.',
     noPick: 'Pick 없음',
+    noPickHistory: '아직 Pick 변경 기록이 없습니다.',
     noSays: '아직 Say가 없습니다.',
+    noSwayedHistory: '아직 Swayed 기록이 없습니다.',
     noTopic: '선택된 토픽이 없습니다.',
     none: '없음',
     oauthNeeded: '{provider} 설정 필요',
-    personal: '개인',
+    openTopic: '토픽 열기',
     pick: 'Pick',
+    pickHistory: 'Pick 기록',
     pickCount: '{count} Pick',
     picked: 'Picked',
     pickFirstActions: '먼저 Pick해야 Say, Boost, Swayed를 사용할 수 있습니다.',
     pickFirstCase: '먼저 Pick해야 주장을 남길 수 있습니다.',
     pickUpdated: 'Pick이 변경됐습니다.',
     private: '비공개',
+    profile: '프로필',
+    profileSubtitle: '@{handle} · 개인 기록 {count}개',
     report: '신고',
     reportReason: '신고 사유: {reasons}',
     reportSubmitted: '신고가 접수됐습니다.',
@@ -110,21 +128,25 @@ const STRINGS = {
     sideStats: 'Pick {picks} · Say {says}',
     signUp: '가입',
     swayed: 'Swayed',
+    swayedHistory: 'Swayed 기록',
     swayedReason: '선택 사항: 왜 설득됐나요?',
     swayedRecorded: 'Swayed가 기록됐습니다.',
     tagline: '하나를 골라. 네 주장을 펼쳐.',
     topics: '토픽',
     writeResay: 'ReSay 쓰기',
+    mySays: '내 Say',
     yourSay: '내 Say',
   },
 };
 
 const state = {
   locale: normalizeLocale(localeFromQuery || localStorage.getItem('pickone:locale') || navigator.language),
+  view: normalizeView(query.get('view') || localStorage.getItem('pickone:view')),
   userId: userIdFromQuery || Number(localStorage.getItem('pickone:userId') || 1),
   topicId: Number(query.get('topicId') || localStorage.getItem('pickone:topicId') || 0) || null,
   data: null,
   authProviders: [],
+  profileOpen: query.get('profile') === '1' || window.location.hash === '#profile',
   sessionResolved: false,
   sessionUserId: null,
   authNotice: query.get('auth')
@@ -141,6 +163,10 @@ function normalizeLocale(value) {
   const locale = String(value || '').toLowerCase();
   if (locale.startsWith('ko')) return 'ko';
   return 'en';
+}
+
+function normalizeView(value) {
+  return value === 'activity' ? 'activity' : 'topics';
 }
 
 function t(key, values = {}) {
@@ -201,6 +227,7 @@ async function load() {
   state.topicId = state.data.topic?.id ?? null;
   localStorage.setItem('pickone:userId', String(state.userId));
   localStorage.setItem('pickone:locale', state.locale);
+  localStorage.setItem('pickone:view', state.view);
   if (state.topicId) localStorage.setItem('pickone:topicId', String(state.topicId));
   render();
   showAuthNotice();
@@ -240,8 +267,8 @@ function render() {
   renderOAuthProviders();
   renderTopics();
   renderTopicDetail();
-  renderTimeline('#global-timeline', state.data.globalTimeline, 'global');
-  renderTimeline('#personal-timeline', state.data.personalTimeline, 'personal');
+  renderActivityView();
+  renderProfilePanel();
 }
 
 function renderChrome() {
@@ -250,11 +277,19 @@ function renderChrome() {
   $('#account-label').textContent = t('account');
   $('#language-label').textContent = t('language');
   $('#topics-title').textContent = t('topics');
-  $('#global-title').textContent = t('global');
-  $('#personal-title').textContent = t('personal');
+  $('#profile-button').textContent = t('profile');
   $('#signup-handle').placeholder = t('newHandle');
   $('#signup-button').textContent = t('signUp');
   $('#locale-select').value = state.locale;
+  $('#topics-view-button').textContent = t('topics');
+  $('#activity-view-button').textContent = t('activity');
+  $('#topics-view-button').classList.toggle('active', state.view === 'topics');
+  $('#activity-view-button').classList.toggle('active', state.view === 'activity');
+  $('#topics-view-button').setAttribute('aria-pressed', String(state.view === 'topics'));
+  $('#activity-view-button').setAttribute('aria-pressed', String(state.view === 'activity'));
+  $('.rail').hidden = state.view !== 'topics';
+  $('#topic-detail').hidden = state.view !== 'topics';
+  $('#activity-view').hidden = state.view !== 'activity';
 }
 
 function renderUsers() {
@@ -439,34 +474,124 @@ function renderSay(topic, say, isReply) {
   `;
 }
 
-function renderTimeline(selector, items, mode) {
-  const node = $(selector);
-  node.innerHTML = items.map((item) => {
-    if (mode === 'personal') {
-      if (item.type === 'pick') {
-        return `
-          <div class="timeline-item">
-            <strong>${item.source === 'swayed' ? t('swayed') : t('pick')}</strong>
-            ${esc(item.fromLabel || t('none'))} -> ${esc(item.toLabel)}
-            <br><span>${esc(item.topicQuestion)}</span>
-          </div>
-        `;
-      }
-      return `
-        <div class="timeline-item">
-          <strong>${t('yourSay')}</strong> ${esc(t('forSide', { side: item.toLabel }))}
-          <br><span>${esc(item.sourceBody)}</span>
-        </div>
-      `;
-    }
+function renderActivityView() {
+  const node = $('#activity-view');
+  node.innerHTML = `
+    <section class="activity-header">
+      <div>
+        <div class="section-title">${t('activity')}</div>
+        <h2>${t('activity')}</h2>
+        <p>${t('activitySubtitle')}</p>
+      </div>
+    </section>
+    <section class="activity-list">
+      ${state.data.globalTimeline.map(renderActivityItem).join('') || `<div class="empty-state">${t('activityEmpty')}</div>`}
+    </section>
+  `;
+}
+
+function renderActivityItem(item) {
+  const label = item.type === 'swayed' ? t('swayed') : item.isReSay ? t('resay') : t('say');
+  return `
+    <article class="activity-item">
+      <div class="activity-meta">
+        <strong>${label}</strong>
+        <span>${time(item.createdAt)}</span>
+      </div>
+      <h3>${esc(item.topicQuestion)}</h3>
+      <p class="hint">${esc(t('byFor', { actor: item.actorName, side: item.sideLabel }))}</p>
+      <p>${esc(item.body)}</p>
+      <button type="button" data-open-topic="${item.topicId}">${t('openTopic')}</button>
+    </article>
+  `;
+}
+
+function renderProfilePanel() {
+  const panel = $('#profile-panel');
+  const backdrop = $('#profile-backdrop');
+  const trigger = $('#profile-button');
+  panel.hidden = !state.profileOpen;
+  backdrop.hidden = !state.profileOpen;
+  trigger.setAttribute('aria-expanded', String(state.profileOpen));
+  if (!state.profileOpen) {
+    panel.innerHTML = '';
+    return;
+  }
+
+  const user = state.data.currentUser;
+  const profile = state.data.personalProfile;
+  const mySays = profile?.mySays ?? state.data.personalTimeline.filter((item) => item.type === 'own_say');
+  const pickHistory = profile?.pickHistory ?? state.data.personalTimeline.filter((item) => item.type === 'pick' && item.source !== 'swayed');
+  const swayedHistory = profile?.swayedHistory ?? state.data.personalTimeline.filter((item) => item.type === 'pick' && item.source === 'swayed');
+  const eventCount = mySays.length + pickHistory.length + swayedHistory.length;
+
+  panel.innerHTML = `
+    <div class="profile-header">
+      <div>
+        <div class="section-title">${t('profile')}</div>
+        <h2 id="profile-title">${esc(user.displayName)}</h2>
+        <p>${esc(t('profileSubtitle', { handle: user.handle, count: eventCount }))}</p>
+      </div>
+      <button type="button" data-profile-close>${t('close')}</button>
+    </div>
+    ${renderProfileSection(t('mySays'), mySays, 'say', t('noMySays'))}
+    ${renderProfileSection(t('pickHistory'), pickHistory, 'pick', t('noPickHistory'))}
+    ${renderProfileSection(t('swayedHistory'), swayedHistory, 'swayed', t('noSwayedHistory'))}
+  `;
+}
+
+function openProfile() {
+  state.profileOpen = true;
+  renderProfilePanel();
+  $('#profile-panel').focus();
+}
+
+function closeProfile() {
+  state.profileOpen = false;
+  renderProfilePanel();
+  $('#profile-button').focus();
+}
+
+function renderProfileSection(title, items, kind, emptyText) {
+  return `
+    <section class="profile-section">
+      <div class="profile-section-title">
+        <span>${esc(title)}</span>
+        <span class="hint">${items.length}</span>
+      </div>
+      <div class="profile-list">
+        ${items.map((item) => renderProfileItem(item, kind)).join('') || `<div class="empty-state">${esc(emptyText)}</div>`}
+      </div>
+    </section>
+  `;
+}
+
+function renderProfileItem(item, kind) {
+  if (kind === 'say') {
     return `
-      <div class="timeline-item">
-        <strong>${item.type === 'swayed' ? t('swayed') : item.isReSay ? t('resay') : t('say')}</strong>
-        ${esc(t('byFor', { actor: item.actorName, side: item.sideLabel }))}
-        <br><span>${esc(item.body)}</span>
+      <div class="profile-item">
+        <div class="profile-item-meta">
+          <strong>${esc(item.toLabel)}</strong>
+          <span>${time(item.createdAt)}</span>
+        </div>
+        <span class="hint">${esc(item.topicQuestion)}</span>
+        <p>${esc(item.sourceBody)}</p>
       </div>
     `;
-  }).join('') || `<div class="empty-state">${t('noEvents')}</div>`;
+  }
+
+  const fromLabel = item.fromLabel || t('none');
+  return `
+    <div class="profile-item">
+      <div class="profile-item-meta">
+        <strong>${kind === 'swayed' ? t('swayed') : t('pick')}</strong>
+        <span>${time(item.createdAt)}</span>
+      </div>
+      <span class="hint">${esc(item.topicQuestion)}</span>
+      <p>${esc(fromLabel)} -> ${esc(item.toLabel)}</p>
+      ${item.sourceBody ? `<p class="profile-source">${esc(item.sourceBody)}</p>` : ''}
+    </div>
+  `;
 }
 
 async function refreshAfter(action) {
@@ -479,6 +604,34 @@ async function refreshAfter(action) {
 }
 
 document.addEventListener('click', (event) => {
+  const viewButton = event.target.closest('[data-view]');
+  if (viewButton) {
+    state.view = normalizeView(viewButton.dataset.view);
+    localStorage.setItem('pickone:view', state.view);
+    render();
+    return;
+  }
+
+  if (event.target.closest('[data-profile-open]')) {
+    openProfile();
+    return;
+  }
+
+  if (event.target.closest('[data-profile-close]')) {
+    closeProfile();
+    return;
+  }
+
+  const activityTopic = event.target.closest('[data-open-topic]');
+  if (activityTopic) {
+    state.topicId = Number(activityTopic.dataset.openTopic);
+    state.view = 'topics';
+    localStorage.setItem('pickone:view', state.view);
+    localStorage.setItem('pickone:topicId', String(state.topicId));
+    load().catch((error) => toast(error.message));
+    return;
+  }
+
   const pick = event.target.closest('[data-pick-side]');
   if (pick) {
     const topic = state.data.topic;
@@ -605,6 +758,12 @@ $('#locale-select').addEventListener('change', (event) => {
   state.locale = normalizeLocale(event.target.value);
   localStorage.setItem('pickone:locale', state.locale);
   render();
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && state.profileOpen) {
+    closeProfile();
+  }
 });
 
 load().catch((error) => toast(error.message));

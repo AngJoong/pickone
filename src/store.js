@@ -230,9 +230,6 @@ function ensureColumn(db, tableName, columnName, definition) {
 }
 
 function seed(db) {
-  const count = db.prepare('SELECT COUNT(*) AS count FROM users').get().count;
-  if (count > 0) return;
-
   const stamp = now();
   const user = db.prepare(`
     INSERT INTO users (handle, display_name, is_admin, created_at)
@@ -247,45 +244,169 @@ function seed(db) {
     VALUES (?, ?, ?)
   `);
 
-  user.run('joon', 'Joon', 0, stamp);
-  user.run('min', 'Min', 0, stamp);
-  user.run('admin', 'Admin', 1, stamp);
+  const ensureUser = (handle, displayName, isAdmin = 0) => {
+    const existing = db.prepare('SELECT id FROM users WHERE handle = ?').get(handle);
+    if (existing) return existing.id;
+    return Number(user.run(handle, displayName, isAdmin, stamp).lastInsertRowid);
+  };
+  const ensureTopic = (slug, question, status = 'active') => {
+    const existing = db.prepare('SELECT id FROM topics WHERE slug = ?').get(slug);
+    if (existing) return existing.id;
+    return Number(topic.run(slug, question, status, stamp).lastInsertRowid);
+  };
+  const ensureSide = (topicId, label, color) => {
+    const existing = db.prepare('SELECT id FROM sides WHERE topic_id = ? AND label = ?').get(topicId, label);
+    if (existing) return existing.id;
+    return Number(side.run(topicId, label, color).lastInsertRowid);
+  };
+  const seedSaysWhenSparse = (topicId, desiredCount, create) => {
+    const count = db.prepare('SELECT COUNT(*) AS count FROM says WHERE topic_id = ?').get(topicId).count;
+    if (count < desiredCount) create();
+  };
+  const ensurePick = (topicId, userId, sideId) => {
+    if (!getPick(db, topicId, userId)) {
+      setPick(db, { topicId, userId, sideId, source: 'manual' });
+    }
+  };
+  const sayAt = (say, minutesAgo) => {
+    const createdAt = new Date(Date.now() - minutesAgo * 60 * 1000).toISOString();
+    db.prepare('UPDATE says SET created_at = ? WHERE id = ?').run(createdAt, say.id);
+    return say;
+  };
+  const boostOnce = (sayId, userId) => {
+    const existing = db.prepare('SELECT id FROM boosts WHERE say_id = ? AND user_id = ?').get(sayId, userId);
+    if (!existing) toggleBoost(db, { sayId, userId });
+  };
+  const swayedOnce = (sayId, userId, caseText) => {
+    const say = db.prepare('SELECT topic_id FROM says WHERE id = ?').get(sayId);
+    const existing = say && db.prepare(`
+      SELECT id FROM swayed
+      WHERE topic_id = ? AND user_id = ? AND sway_say_id = ?
+    `).get(say.topic_id, userId, sayId);
+    if (!existing) submitSwayed(db, { sayId, userId, caseText });
+  };
 
-  const remoteId = Number(topic.run(
+  const joonId = ensureUser('joon', 'Joon');
+  const minId = ensureUser('min', 'Min');
+  const adminId = ensureUser('admin', 'Admin', 1);
+  const ariId = ensureUser('ari', 'Ari');
+  const solId = ensureUser('sol', 'Sol');
+  const nariId = ensureUser('nari', 'Nari');
+  const theoId = ensureUser('theo', 'Theo');
+
+  const remoteId = ensureTopic(
     'remote-work-default',
     'Should remote work be the default?',
     'active',
-    stamp,
-  ).lastInsertRowid);
-  const sportsId = Number(topic.run(
+  );
+  const sportsId = ensureTopic(
     'weekend-sport',
     'Which sport owns the weekend?',
     'active',
-    stamp,
-  ).lastInsertRowid);
-  const draftId = Number(topic.run(
+  );
+  const aiDraftId = ensureTopic(
+    'ai-first-drafts',
+    'Should AI write the first draft?',
+    'active',
+  );
+  const downtownId = ensureTopic(
+    'downtown-car-ban',
+    'Should downtown streets ban private cars?',
+    'active',
+  );
+  const pizzaId = ensureTopic(
+    'pineapple-pizza',
+    'Does pineapple belong on pizza?',
+    'active',
+  );
+  const draftId = ensureTopic(
     'draft-product-voice',
     'Draft: should Pick One sound sharper or calmer?',
     'inactive',
-    stamp,
-  ).lastInsertRowid);
+  );
 
-  const officeId = Number(side.run(remoteId, 'Office', '#d14d42').lastInsertRowid);
-  const remoteSideId = Number(side.run(remoteId, 'Remote', '#12805c').lastInsertRowid);
-  side.run(sportsId, 'Football', '#b35c00');
-  side.run(sportsId, 'Baseball', '#2368b8');
-  side.run(draftId, 'Sharper', '#6f4bc2');
-  side.run(draftId, 'Calmer', '#607d3b');
+  const officeId = ensureSide(remoteId, 'Office', '#d14d42');
+  const remoteSideId = ensureSide(remoteId, 'Remote', '#12805c');
+  const footballId = ensureSide(sportsId, 'Football', '#b35c00');
+  const baseballId = ensureSide(sportsId, 'Baseball', '#2368b8');
+  const humanId = ensureSide(aiDraftId, 'Human', '#6f4bc2');
+  const aiId = ensureSide(aiDraftId, 'AI', '#12805c');
+  const banCarsId = ensureSide(downtownId, 'Ban cars', '#d14d42');
+  const keepCarsId = ensureSide(downtownId, 'Keep cars', '#2368b8');
+  const yesPizzaId = ensureSide(pizzaId, 'Yes', '#12805c');
+  const noPizzaId = ensureSide(pizzaId, 'No', '#d14d42');
+  ensureSide(draftId, 'Sharper', '#6f4bc2');
+  ensureSide(draftId, 'Calmer', '#607d3b');
 
-  setPick(db, { topicId: remoteId, userId: 1, sideId: officeId, source: 'manual' });
-  setPick(db, { topicId: remoteId, userId: 2, sideId: remoteSideId, source: 'manual' });
-  createSay(db, { topicId: remoteId, userId: 1, body: 'Office first keeps the small decisions fast and visible.' });
-  const remoteSay = createSay(db, { topicId: remoteId, userId: 2, body: 'Remote first makes the best work accessible to more people.' });
-  createSay(db, {
-    topicId: remoteId,
-    userId: 1,
-    body: 'Access matters, but onboarding still breaks without daily context.',
-    parentSayId: remoteSay.id,
+  ensurePick(remoteId, joonId, officeId);
+  ensurePick(remoteId, minId, remoteSideId);
+  ensurePick(remoteId, ariId, officeId);
+  ensurePick(remoteId, solId, remoteSideId);
+  ensurePick(remoteId, nariId, officeId);
+  ensurePick(remoteId, theoId, remoteSideId);
+  ensurePick(sportsId, joonId, footballId);
+  ensurePick(sportsId, minId, baseballId);
+  ensurePick(sportsId, ariId, footballId);
+  ensurePick(sportsId, solId, baseballId);
+  ensurePick(sportsId, nariId, footballId);
+  ensurePick(sportsId, theoId, baseballId);
+  ensurePick(aiDraftId, joonId, humanId);
+  ensurePick(aiDraftId, minId, aiId);
+  ensurePick(aiDraftId, ariId, aiId);
+  ensurePick(aiDraftId, solId, humanId);
+  ensurePick(aiDraftId, theoId, aiId);
+  ensurePick(downtownId, joonId, banCarsId);
+  ensurePick(downtownId, minId, keepCarsId);
+  ensurePick(downtownId, nariId, banCarsId);
+  ensurePick(downtownId, solId, banCarsId);
+  ensurePick(pizzaId, ariId, yesPizzaId);
+  ensurePick(pizzaId, theoId, noPizzaId);
+
+  seedSaysWhenSparse(remoteId, 8, () => {
+    sayAt(createSay(db, { topicId: remoteId, userId: joonId, body: 'Office first keeps the small decisions fast and visible.' }), 72);
+    const remoteAccess = sayAt(createSay(db, { topicId: remoteId, userId: minId, body: 'Remote first makes the best work accessible to more people.' }), 68);
+    sayAt(createSay(db, { topicId: remoteId, userId: ariId, body: 'Access matters, but onboarding still breaks without daily context.', parentSayId: remoteAccess.id }), 63);
+    const deepWork = sayAt(createSay(db, { topicId: remoteId, userId: solId, body: 'Remote wins because deep work dies when every desk is an interruption machine.' }), 57);
+    sayAt(createSay(db, { topicId: remoteId, userId: nariId, body: 'The best mentoring happens in the weird five minutes after a meeting.', parentSayId: deepWork.id }), 52);
+    const context = sayAt(createSay(db, { topicId: remoteId, userId: nariId, body: 'Office teams notice quiet blockers before they turn into a week of Slack archaeology.' }), 47);
+    sayAt(createSay(db, { topicId: remoteId, userId: theoId, body: 'That only works for people near the office. Remote makes the default fair.', parentSayId: context.id }), 44);
+    const hybrid = sayAt(createSay(db, { topicId: remoteId, userId: ariId, body: 'Default remote does not mean never meet. It means presence has to justify itself.' }), 39);
+    boostOnce(hybrid.id, nariId);
+    swayedOnce(remoteAccess.id, ariId, 'Access should be the default, office should be intentional.');
+  });
+
+  seedSaysWhenSparse(sportsId, 7, () => {
+    const football = sayAt(createSay(db, { topicId: sportsId, userId: joonId, body: 'Football owns the weekend because one game can carry the whole city mood.' }), 95);
+    sayAt(createSay(db, { topicId: sportsId, userId: minId, body: 'Baseball is better weekend background: slow enough to talk, tense enough to care.' }), 89);
+    sayAt(createSay(db, { topicId: sportsId, userId: ariId, body: 'Tailgates, fantasy, Sunday pacing. Football is built for the weekend.', parentSayId: football.id }), 83);
+    const baseball = sayAt(createSay(db, { topicId: sportsId, userId: solId, body: 'Baseball gives you a whole afternoon instead of three hours of ads and panic.' }), 76);
+    sayAt(createSay(db, { topicId: sportsId, userId: theoId, body: 'That is exactly why football wins. Scarcity makes every possession matter.', parentSayId: baseball.id }), 71);
+    const redZone = sayAt(createSay(db, { topicId: sportsId, userId: nariId, body: 'Football has the better shared ritual: everyone knows when the moment got big.' }), 66);
+    sayAt(createSay(db, { topicId: sportsId, userId: minId, body: 'Baseball has shared rituals too. They just do not scream every six seconds.', parentSayId: redZone.id }), 61);
+    boostOnce(football.id, ariId);
+  });
+
+  seedSaysWhenSparse(aiDraftId, 5, () => {
+    const aiDraft = sayAt(createSay(db, { topicId: aiDraftId, userId: minId, body: 'Let AI make the ugly first draft. Humans should spend taste on choosing and cutting.' }), 34);
+    sayAt(createSay(db, { topicId: aiDraftId, userId: joonId, body: 'First drafts are where the thinking starts. Outsourcing that makes the work generic.' }), 31);
+    sayAt(createSay(db, { topicId: aiDraftId, userId: ariId, body: 'Blank pages are expensive. AI gets the argument on the table faster.', parentSayId: aiDraft.id }), 28);
+    const humanDraft = sayAt(createSay(db, { topicId: aiDraftId, userId: solId, body: 'A human first draft shows what the team actually believes before polish hides it.' }), 22);
+    sayAt(createSay(db, { topicId: aiDraftId, userId: theoId, body: 'Counterpoint: most teams do not need sacred drafts, they need momentum.', parentSayId: humanDraft.id }), 16);
+    swayedOnce(aiDraft.id, joonId, 'Momentum beats staring at a blank doc.');
+    swayedOnce(aiDraft.id, solId, 'Momentum beats staring at a blank doc.');
+  });
+
+  seedSaysWhenSparse(downtownId, 4, () => {
+    sayAt(createSay(db, { topicId: downtownId, userId: joonId, body: 'Ban private cars downtown. Streets should move people, not store metal boxes.' }), 145);
+    const access = sayAt(createSay(db, { topicId: downtownId, userId: minId, body: 'Keep cars until transit is good enough for late shifts, kids, and bad weather.' }), 138);
+    sayAt(createSay(db, { topicId: downtownId, userId: nariId, body: 'Then phase it: delivery windows, resident permits, and car-free core blocks first.', parentSayId: access.id }), 131);
+    sayAt(createSay(db, { topicId: downtownId, userId: solId, body: 'A car ban is not anti-driver. It is pro-street.' }), 124);
+  });
+
+  seedSaysWhenSparse(pizzaId, 3, () => {
+    sayAt(createSay(db, { topicId: pizzaId, userId: ariId, body: 'Pineapple belongs. Sweet, salty, heat. That is the whole point.' }), 118);
+    const no = sayAt(createSay(db, { topicId: pizzaId, userId: theoId, body: 'Fruit on pizza is a prank that got franchised.' }), 112);
+    sayAt(createSay(db, { topicId: pizzaId, userId: ariId, body: 'Tomato is fruit. The door was already open.', parentSayId: no.id }), 105);
   });
 }
 
@@ -541,6 +662,7 @@ export function getAppState(db, { userId, topicId = null }) {
     topic,
     globalTimeline: listGlobalTimeline(db, user.id),
     personalTimeline: listPersonalTimeline(db, user.id),
+    personalProfile: listPersonalProfile(db, user.id),
     reportReasons: Array.from(REPORT_REASONS),
   };
 }
@@ -770,6 +892,7 @@ function listGlobalTimeline(db, userId) {
     SELECT
       'say' AS type,
       sa.id,
+      sa.topic_id,
       sa.created_at,
       t.question AS topic_question,
       u.display_name AS actor_name,
@@ -788,6 +911,7 @@ function listGlobalTimeline(db, userId) {
     SELECT
       'swayed' AS type,
       sw.id,
+      sw.topic_id,
       sw.created_at,
       t.question AS topic_question,
       u.display_name AS actor_name,
@@ -809,6 +933,7 @@ function listGlobalTimeline(db, userId) {
     .map((row) => ({
       type: row.type,
       id: row.id,
+      topicId: row.topic_id,
       createdAt: row.created_at,
       topicQuestion: row.topic_question,
       actorName: row.actor_name,
@@ -870,4 +995,64 @@ function listPersonalTimeline(db, userId) {
       toLabel: row.to_label,
       sourceBody: row.source_body,
     }));
+}
+
+function mapPersonalRow(row) {
+  return {
+    type: row.type,
+    id: row.id,
+    createdAt: row.created_at,
+    topicQuestion: row.topic_question,
+    source: row.source,
+    fromLabel: row.from_label,
+    toLabel: row.to_label,
+    sourceBody: row.source_body,
+  };
+}
+
+function listPersonalProfile(db, userId) {
+  requireUser(db, userId);
+  const mySays = db.prepare(`
+    SELECT
+      'own_say' AS type,
+      sa.id,
+      sa.created_at,
+      t.question AS topic_question,
+      NULL AS source,
+      NULL AS from_label,
+      s.label AS to_label,
+      sa.body AS source_body
+    FROM says sa
+    JOIN topics t ON t.id = sa.topic_id
+    JOIN sides s ON s.id = sa.side_id
+    WHERE sa.author_id = ? AND sa.visible = 1
+    ORDER BY sa.created_at DESC, sa.id DESC
+    LIMIT 50
+  `).all(Number(userId)).map(mapPersonalRow);
+
+  const pickRows = db.prepare(`
+    SELECT
+      'pick' AS type,
+      ph.id,
+      ph.created_at,
+      t.question AS topic_question,
+      ph.source,
+      from_side.label AS from_label,
+      to_side.label AS to_label,
+      source_say.body AS source_body
+    FROM pick_history ph
+    JOIN topics t ON t.id = ph.topic_id
+    LEFT JOIN sides from_side ON from_side.id = ph.from_side_id
+    JOIN sides to_side ON to_side.id = ph.to_side_id
+    LEFT JOIN says source_say ON source_say.id = ph.source_say_id
+    WHERE ph.user_id = ?
+    ORDER BY ph.created_at DESC, ph.id DESC
+    LIMIT 50
+  `).all(Number(userId)).map(mapPersonalRow);
+
+  return {
+    mySays,
+    pickHistory: pickRows.filter((item) => item.source !== 'swayed'),
+    swayedHistory: pickRows.filter((item) => item.source === 'swayed'),
+  };
 }
