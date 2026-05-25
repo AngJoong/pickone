@@ -41,7 +41,7 @@ const STRINGS = {
     none: 'None',
     oauthNeeded: '{provider} setup needed',
     openTopic: 'Open topic',
-    opposingCase: 'Opposing Case',
+    otherPickSays: "Other Picks' Says",
     pick: 'Pick',
     pickHistory: 'Pick Changes',
     pickCount: '{count} Picks',
@@ -52,8 +52,8 @@ const STRINGS = {
     private: 'Private',
     nextMove: 'Next move',
     nextMoveNoPick: 'Pick a side to Say, ReSay, Boost, or mark Swayed.',
-    nextMovePicked: 'Defend {side}, or test it against the strongest opposing case.',
-    noOpposingCase: 'No opposing Say is ready yet.',
+    nextMovePicked: "Defend {side}, or scan the Says from other Picks.",
+    noOtherPickSays: 'No public Say is ready yet.',
     profile: 'My Argument Trail',
     profileSubtitle: '@{handle} · {count} argument moments',
     report: 'Report',
@@ -67,7 +67,7 @@ const STRINGS = {
     sideStats: '{picks} Picks · {says} Says',
     signUp: 'Sign up',
     swayed: 'Swayed',
-    spotlightNoPick: 'You can read now. Pick a side before taking action.',
+    otherPickSaysNoPick: 'You can read now. Pick a side before taking action.',
     swayedHistory: 'Swayed Records',
     swayedReason: 'Optional: why did it sway you?',
     swayedRecorded: 'Swayed recorded.',
@@ -115,7 +115,7 @@ const STRINGS = {
     none: '없음',
     oauthNeeded: '{provider} 설정 필요',
     openTopic: '토픽 열기',
-    opposingCase: '상대 주장',
+    otherPickSays: '다른 Pick들의 Say',
     pick: 'Pick',
     pickHistory: 'Pick 변화',
     pickCount: '{count} Pick',
@@ -126,8 +126,8 @@ const STRINGS = {
     private: '비공개',
     nextMove: '다음 행동',
     nextMoveNoPick: '먼저 Pick하면 Say, ReSay, Boost, Swayed를 사용할 수 있습니다.',
-    nextMovePicked: '{side}를 지키거나, 가장 강한 상대 주장을 확인해 보세요.',
-    noOpposingCase: '아직 보여줄 상대 주장이 없습니다.',
+    nextMovePicked: '{side}를 지키거나, 다른 Pick들의 Say 흐름을 확인해 보세요.',
+    noOtherPickSays: '아직 보여줄 Say가 없습니다.',
     profile: '내 주장 기록',
     profileSubtitle: '@{handle} · 주장 기록 {count}개',
     report: '신고',
@@ -141,7 +141,7 @@ const STRINGS = {
     sideStats: 'Pick {picks} · Say {says}',
     signUp: '가입',
     swayed: 'Swayed',
-    spotlightNoPick: '읽기는 가능하지만 행동은 Pick 이후 가능합니다.',
+    otherPickSaysNoPick: '읽기는 가능하지만 행동은 Pick 이후 가능합니다.',
     swayedHistory: '설득된 기록',
     swayedReason: '선택 사항: 왜 설득됐나요?',
     swayedRecorded: 'Swayed가 기록됐습니다.',
@@ -360,7 +360,7 @@ function renderTopicDetail() {
   target.innerHTML = `
     ${renderArenaHero(topic)}
     ${renderNextMove(topic)}
-    ${renderOpposingSpotlight(topic)}
+    ${renderOtherPickSays(topic)}
     ${renderComposer(topic)}
     <section class="arguments-section">
       <div class="arguments-heading">
@@ -446,52 +446,67 @@ function flattenSays(says) {
   return says.flatMap((say) => [say, ...(say.replies || [])]);
 }
 
-function findOpposingSpotlight(topic) {
+function findOtherPickSays(topic) {
   const currentPick = topic.currentPick;
-  const says = flattenSays(topic.says)
+  return flattenSays(topic.says)
     .filter((say) => say.visible && say.eligible && say.authorId !== state.userId)
-    .filter((say) => !currentPick || say.sideId !== currentPick.sideId);
-  return says.sort((a, b) => (
-    (b.swayCount - a.swayCount)
-    || (b.boostCount - a.boostCount)
-    || String(b.createdAt).localeCompare(String(a.createdAt))
-  ))[0] ?? null;
+    .filter((say) => !currentPick || say.sideId !== currentPick.sideId)
+    .sort((a, b) => (
+      (b.swayCount - a.swayCount)
+      || (b.boostCount - a.boostCount)
+      || String(b.createdAt).localeCompare(String(a.createdAt))
+    ))
+    .slice(0, 3);
 }
 
-function renderOpposingSpotlight(topic) {
-  const say = findOpposingSpotlight(topic);
-  const canAct = topic.status === 'active' && topic.currentPick && say;
-  const canSwayed = canAct && say.sideId !== topic.currentPick.sideId && say.eligible;
-  const canReply = canAct && say.eligible;
-  if (!say) {
+function renderOtherPickSays(topic) {
+  const says = findOtherPickSays(topic);
+  if (says.length === 0) {
     return `
-      <section class="spotlight-card">
-        <div class="section-title">${t('opposingCase')}</div>
-        <p class="hint">${t('noOpposingCase')}</p>
+      <section class="other-picks">
+        <div class="section-title">${t('otherPickSays')}</div>
+        <p class="hint">${t('noOtherPickSays')}</p>
       </section>
     `;
   }
 
   return `
-    <section class="spotlight-card">
-      <div class="spotlight-copy">
-        <div class="section-title">${t('opposingCase')}</div>
+    <section class="other-picks">
+      <div class="other-picks-heading">
+        <div>
+          <div class="section-title">${t('otherPickSays')}</div>
+          ${topic.currentPick ? '' : `<p class="hint">${t('otherPickSaysNoPick')}</p>`}
+        </div>
+      </div>
+      <div class="other-picks-list">
+        ${says.map((say) => renderOtherPickSay(topic, say)).join('')}
+      </div>
+    </section>
+  `;
+}
+
+function renderOtherPickSay(topic, say) {
+  const canAct = topic.status === 'active' && topic.currentPick;
+  const canSwayed = canAct && say.sideId !== topic.currentPick.sideId && say.eligible;
+  const canReply = canAct && say.eligible;
+  return `
+    <article class="other-pick-say">
+      <div class="other-pick-copy">
         <div class="say-meta">
           <span class="side-badge"><span class="dot" style="background:${esc(say.sideColor)}"></span>${esc(say.sideLabel)}</span>
           <span>${esc(say.authorName)}</span>
           <span>${time(say.createdAt)}</span>
         </div>
-        <p class="spotlight-body">${esc(say.body)}</p>
-        ${topic.currentPick ? '' : `<p class="hint">${t('spotlightNoPick')}</p>`}
+        <p class="other-pick-body">${esc(say.body)}</p>
       </div>
-      <div class="spotlight-actions">
+      <div class="other-pick-actions">
         <button class="primary" data-swayed="${say.id}" ${canSwayed ? '' : 'disabled'}>
           ${t('swayed')} · ${say.swayCount}
         </button>
         <button data-reply="${say.id}" ${canReply ? '' : 'disabled'}>${t('resay')}</button>
         <button data-report="say:${say.id}">${t('report')}</button>
       </div>
-    </section>
+    </article>
   `;
 }
 

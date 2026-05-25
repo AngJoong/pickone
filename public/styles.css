@@ -251,7 +251,7 @@ html[lang="ko"] .topic-kicker {
 .next-move,
 .composer,
 .say-card,
-.spotlight-card,
+.other-picks,
 .activity-header,
 .activity-item,
 .empty-state {
@@ -483,29 +483,52 @@ html[lang="ko"] .topic-kicker {
   line-height: 1.35;
 }
 
-.spotlight-card {
+.other-picks {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 16px;
+  gap: 12px;
   padding: 16px;
   border-left: 4px solid var(--accent);
 }
 
-.spotlight-copy {
+.other-picks-heading {
   display: grid;
-  gap: 9px;
+  gap: 5px;
 }
 
-.spotlight-body {
+.other-picks-heading p {
+  margin: 0;
+}
+
+.other-picks-list {
+  display: grid;
+  gap: 10px;
+}
+
+.other-pick-say {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+}
+
+.other-pick-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.other-pick-body {
   margin: 0;
   max-width: 760px;
   overflow-wrap: anywhere;
-  font-size: 19px;
+  font-size: 17px;
   line-height: 1.42;
 }
 
-.spotlight-actions {
+.other-pick-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -832,7 +855,7 @@ html[lang="ko"] .topic-kicker {
 
   .side-picks,
   .lanes,
-  .spotlight-card {
+  .other-pick-say {
     grid-template-columns: 1fr;
   }
 
@@ -840,7 +863,7 @@ html[lang="ko"] .topic-kicker {
     font-size: 23px;
   }
 
-  .spotlight-actions {
+  .other-pick-actions {
     justify-content: flex-start;
   }
 
