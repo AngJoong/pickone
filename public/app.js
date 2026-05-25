@@ -5,11 +5,9 @@ const userIdFromQuery = Number(query.get('userId') || 0);
 const STRINGS = {
   en: {
     account: 'Account',
-    activeTopic: 'Active Arena',
     activity: 'Arena Pulse',
     activityEmpty: 'No activity yet.',
     activitySubtitle: 'Recent Say, ReSay, and Swayed moments across active arenas.',
-    allArguments: 'All arguments',
     admin: 'admin',
     adminPreview: 'admin preview',
     authConfigHint: 'Set provider env vars to enable.',
@@ -22,6 +20,9 @@ const STRINGS = {
     currentPickSnapshot: 'New Says use your current choice snapshot.',
     emptyTopics: 'No active topics.',
     forSide: 'for {side}',
+    featuredOtherPickSay: 'Featured other Pick Say',
+    focusNow: 'Focus now',
+    fullThread: 'Full thread',
     inactivePreview: 'Inactive preview',
     inactiveReadOnly: 'Inactive topics are private and read-only.',
     language: 'Language',
@@ -39,12 +40,11 @@ const STRINGS = {
     none: 'None',
     oauthNeeded: '{provider} setup needed',
     openTopic: 'Open topic',
-    otherPickSays: "Other Picks' Says",
+    nextUp: 'Next up',
     pick: 'Pick',
     pickHistory: 'Pick Changes',
     pickCount: '{count} Picks',
     picked: 'Picked',
-    pickFirstActions: 'Pick a side before writing, Boosting, or using Swayed.',
     pickFirstCase: 'Pick first to make your case.',
     pickUpdated: 'Pick updated.',
     private: 'Private',
@@ -68,17 +68,16 @@ const STRINGS = {
     swayedRecorded: 'Swayed recorded.',
     tagline: 'Pick one. Change or defend your mind.',
     topics: 'Topics',
+    viewAllArguments: 'View all arguments',
     writeResay: 'Write a ReSay',
     mySays: 'My Says',
     yourSay: 'Your Say',
   },
   ko: {
     account: '계정',
-    activeTopic: '진행 중 Arena',
     activity: '흐름',
     activityEmpty: '아직 활동이 없습니다.',
     activitySubtitle: '진행 중 Arena의 Say, ReSay, Swayed 흐름입니다.',
-    allArguments: '전체 주장',
     admin: '관리자',
     adminPreview: '관리자 미리보기',
     authConfigHint: '환경 변수를 설정하면 켜집니다.',
@@ -91,6 +90,9 @@ const STRINGS = {
     currentPickSnapshot: '새 Say는 현재 선택 기준으로 기록됩니다.',
     emptyTopics: '진행 중인 토픽이 없습니다.',
     forSide: '{side} 쪽',
+    featuredOtherPickSay: '다른 Pick의 대표 Say',
+    focusNow: '지금 집중',
+    fullThread: '전체 흐름',
     inactivePreview: '비공개 미리보기',
     inactiveReadOnly: '비공개 토픽은 읽기만 가능합니다.',
     language: '언어',
@@ -108,12 +110,11 @@ const STRINGS = {
     none: '없음',
     oauthNeeded: '{provider} 설정 필요',
     openTopic: '토픽 열기',
-    otherPickSays: '다른 Pick들의 Say',
+    nextUp: '다음에 볼 것',
     pick: 'Pick',
     pickHistory: 'Pick 변화',
     pickCount: '{count} Pick',
     picked: 'Picked',
-    pickFirstActions: '먼저 Pick해야 Say, Boost, Swayed를 사용할 수 있습니다.',
     pickFirstCase: '먼저 Pick해야 주장을 남길 수 있습니다.',
     pickUpdated: 'Pick이 변경됐습니다.',
     private: '비공개',
@@ -137,6 +138,7 @@ const STRINGS = {
     swayedRecorded: 'Swayed가 기록됐습니다.',
     tagline: '하나를 고르고, 설득하거나 바꿔라.',
     topics: '토픽',
+    viewAllArguments: '전체 주장 보기',
     writeResay: 'ReSay 쓰기',
     mySays: '내 Say',
     yourSay: '내 Say',
@@ -348,24 +350,13 @@ function renderTopicDetail() {
   }
 
   target.innerHTML = `
-    ${renderArenaHero(topic)}
-    ${renderOtherPickSays(topic)}
-    ${renderComposer(topic)}
-    <section class="arguments-section">
-      <div class="arguments-heading">
-        <div>
-          <div class="section-title">${t('allArguments')}</div>
-          <h3>${t('allArguments')}</h3>
-        </div>
-      </div>
-      <div class="lanes">
-        ${topic.sides.map((side) => renderLane(topic, side)).join('')}
-      </div>
-    </section>
+    ${renderFocusPanel(topic)}
+    ${renderNextUp(topic)}
+    ${renderFullThread(topic)}
   `;
 }
 
-function renderArenaHero(topic) {
+function renderFocusPanel(topic) {
   const sideChoices = topic.sides.map((side) => `
     <div class="side-choice">
       <span class="side-swatch" style="background:${esc(side.color)}"></span>
@@ -382,13 +373,14 @@ function renderArenaHero(topic) {
   `).join('');
 
   return `
-    <section class="topic-header arena-hero">
+    <section class="focus-panel">
       <div class="topic-kicker">
-        <span>${topic.status === 'active' ? t('activeTopic') : t('inactivePreview')}</span>
+        <span>${topic.status === 'active' ? t('focusNow') : t('inactivePreview')}</span>
         <button data-report="topic:${topic.id}">${t('report')}</button>
       </div>
       <h2>${esc(topic.question)}</h2>
       <div class="side-picks">${sideChoices}</div>
+      ${renderComposer(topic)}
     </section>
   `;
 }
@@ -407,15 +399,16 @@ function findOtherPickSays(topic) {
       || (b.boostCount - a.boostCount)
       || String(b.createdAt).localeCompare(String(a.createdAt))
     ))
-    .slice(0, 3);
+    .slice(0, 1);
 }
 
-function renderOtherPickSays(topic) {
+function renderNextUp(topic) {
   const says = findOtherPickSays(topic);
   if (says.length === 0) {
     return `
       <section class="other-picks">
-        <div class="section-title">${t('otherPickSays')}</div>
+        <div class="section-title">${t('nextUp')}</div>
+        <h3>${t('featuredOtherPickSay')}</h3>
         <p class="hint">${t('noOtherPickSays')}</p>
       </section>
     `;
@@ -425,7 +418,8 @@ function renderOtherPickSays(topic) {
     <section class="other-picks">
       <div class="other-picks-heading">
         <div>
-          <div class="section-title">${t('otherPickSays')}</div>
+          <div class="section-title">${t('nextUp')}</div>
+          <h3>${t('featuredOtherPickSay')}</h3>
           ${topic.currentPick ? '' : `<p class="hint">${t('otherPickSaysNoPick')}</p>`}
         </div>
       </div>
@@ -458,6 +452,20 @@ function renderOtherPickSay(topic, say) {
         <button data-report="say:${say.id}">${t('report')}</button>
       </div>
     </article>
+  `;
+}
+
+function renderFullThread(topic) {
+  return `
+    <details class="arguments-section">
+      <summary class="arguments-summary">
+        <span class="section-title">${t('fullThread')}</span>
+        <strong>${t('viewAllArguments')}</strong>
+      </summary>
+      <div class="lanes">
+        ${topic.sides.map((side) => renderLane(topic, side)).join('')}
+      </div>
+    </details>
   `;
 }
 

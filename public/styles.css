@@ -246,9 +246,7 @@ html[lang="ko"] .topic-kicker {
 
 .topic-button,
 .timeline-item,
-.topic-header,
-.pick-strip,
-.composer,
+.focus-panel,
 .say-card,
 .other-picks,
 .activity-header,
@@ -379,13 +377,11 @@ html[lang="ko"] .topic-kicker {
   color: var(--ink);
 }
 
-.topic-header {
-  padding: 18px;
-}
-
-.arena-hero {
+.focus-panel {
   display: grid;
-  gap: 14px;
+  gap: 16px;
+  padding: 20px;
+  border-color: rgba(36, 87, 197, 0.34);
 }
 
 .topic-kicker {
@@ -399,7 +395,7 @@ html[lang="ko"] .topic-kicker {
   text-transform: uppercase;
 }
 
-.topic-header h2 {
+.focus-panel h2 {
   margin: 0;
   font-size: 32px;
   line-height: 1.08;
@@ -449,25 +445,24 @@ html[lang="ko"] .topic-kicker {
   color: var(--danger);
 }
 
-.pick-strip {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px;
-}
-
 .other-picks {
   display: grid;
   gap: 12px;
-  padding: 16px;
+  padding: 14px;
   border-left: 4px solid var(--accent);
+  background: var(--panel);
 }
 
 .other-picks-heading {
   display: grid;
   gap: 5px;
+}
+
+.other-picks-heading h3,
+.other-picks h3 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
 }
 
 .other-picks-heading p {
@@ -511,28 +506,28 @@ html[lang="ko"] .topic-kicker {
 }
 
 .arguments-section {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.arguments-section[open] {
   display: grid;
-  gap: 8px;
-}
-
-.arguments-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
   gap: 12px;
-  padding: 4px 2px 0;
 }
 
-.arguments-heading h3 {
-  margin: 0;
-  font-size: 18px;
-}
-
-.pick-current {
+.arguments-summary {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 700;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.arguments-summary strong {
+  color: var(--ink);
 }
 
 .dot {
@@ -545,7 +540,7 @@ html[lang="ko"] .topic-kicker {
 .composer {
   display: grid;
   gap: 8px;
-  padding: 12px;
+  padding: 2px 0 0;
 }
 
 .composer textarea {
@@ -834,7 +829,7 @@ html[lang="ko"] .topic-kicker {
     grid-template-columns: 1fr;
   }
 
-  .topic-header h2 {
+  .focus-panel h2 {
     font-size: 23px;
   }
 
