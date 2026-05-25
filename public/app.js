@@ -22,7 +22,7 @@ const STRINGS = {
     forSide: 'for {side}',
     featuredOtherPickSay: 'Featured other Pick Say',
     focusNow: 'Focus now',
-    fullThread: 'Full thread',
+    fullThread: 'Side lanes',
     inactivePreview: 'Inactive preview',
     inactiveReadOnly: 'Inactive topics are private and read-only.',
     language: 'Language',
@@ -68,7 +68,7 @@ const STRINGS = {
     swayedRecorded: 'Swayed recorded.',
     tagline: 'Pick one. Change or defend your mind.',
     topics: 'Topics',
-    viewAllArguments: 'View all arguments',
+    viewAllArguments: 'First-level Says with ReSays',
     writeResay: 'Write a ReSay',
     mySays: 'My Says',
     yourSay: 'Your Say',
@@ -92,7 +92,7 @@ const STRINGS = {
     forSide: '{side} 쪽',
     featuredOtherPickSay: '다른 Pick의 대표 Say',
     focusNow: '지금 집중',
-    fullThread: '전체 흐름',
+    fullThread: '좌우 Say',
     inactivePreview: '비공개 미리보기',
     inactiveReadOnly: '비공개 토픽은 읽기만 가능합니다.',
     language: '언어',
@@ -138,7 +138,7 @@ const STRINGS = {
     swayedRecorded: 'Swayed가 기록됐습니다.',
     tagline: '하나를 고르고, 설득하거나 바꿔라.',
     topics: '토픽',
-    viewAllArguments: '전체 주장 보기',
+    viewAllArguments: '상위 Say와 이어진 ReSay',
     writeResay: 'ReSay 쓰기',
     mySays: '내 Say',
     yourSay: '내 Say',
@@ -457,15 +457,17 @@ function renderOtherPickSay(topic, say) {
 
 function renderFullThread(topic) {
   return `
-    <details class="arguments-section">
-      <summary class="arguments-summary">
-        <span class="section-title">${t('fullThread')}</span>
-        <strong>${t('viewAllArguments')}</strong>
-      </summary>
+    <section class="arguments-section">
+      <div class="arguments-heading">
+        <div>
+          <div class="section-title">${t('fullThread')}</div>
+          <h3>${t('viewAllArguments')}</h3>
+        </div>
+      </div>
       <div class="lanes">
         ${topic.sides.map((side) => renderLane(topic, side)).join('')}
       </div>
-    </details>
+    </section>
   `;
 }
 
