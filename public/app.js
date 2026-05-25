@@ -16,11 +16,9 @@ const STRINGS = {
     boost: 'Boost',
     boosted: 'Boosted',
     byFor: 'by {actor} for {side}',
-    changeTo: 'Change to {side}',
     close: 'Close',
     composerPlaceholder: 'Make your case for {side}',
     confirmSwayed: 'Change your Pick because of this Say?',
-    currentPick: 'Current choice: {side}',
     currentPickSnapshot: 'New Says use your current choice snapshot.',
     emptyTopics: 'No active topics.',
     forSide: 'for {side}',
@@ -50,9 +48,6 @@ const STRINGS = {
     pickFirstCase: 'Pick first to make your case.',
     pickUpdated: 'Pick updated.',
     private: 'Private',
-    nextMove: 'Change pick',
-    nextMoveNoPick: 'Pick a side to Say, ReSay, Boost, or mark Swayed.',
-    nextMovePicked: "Defend {side}, or scan the Says from other Picks.",
     noOtherPickSays: 'No public Say is ready yet.',
     profile: 'My Argument Trail',
     profileSubtitle: '@{handle} · {count} argument moments',
@@ -90,11 +85,9 @@ const STRINGS = {
     boost: 'Boost',
     boosted: 'Boosted',
     byFor: '{actor} · {side}',
-    changeTo: '{side}로 바꾸기',
     close: '닫기',
     composerPlaceholder: '{side} 쪽 주장을 남겨주세요',
     confirmSwayed: '이 Say 때문에 Pick을 바꿀까요?',
-    currentPick: '현재 선택: {side}',
     currentPickSnapshot: '새 Say는 현재 선택 기준으로 기록됩니다.',
     emptyTopics: '진행 중인 토픽이 없습니다.',
     forSide: '{side} 쪽',
@@ -124,9 +117,6 @@ const STRINGS = {
     pickFirstCase: '먼저 Pick해야 주장을 남길 수 있습니다.',
     pickUpdated: 'Pick이 변경됐습니다.',
     private: '비공개',
-    nextMove: '선택 변경',
-    nextMoveNoPick: '먼저 Pick하면 Say, ReSay, Boost, Swayed를 사용할 수 있습니다.',
-    nextMovePicked: '{side}를 지키거나, 다른 Pick들의 Say 흐름을 확인해 보세요.',
     noOtherPickSays: '아직 보여줄 Say가 없습니다.',
     profile: '내 주장 기록',
     profileSubtitle: '@{handle} · 주장 기록 {count}개',
@@ -359,7 +349,6 @@ function renderTopicDetail() {
 
   target.innerHTML = `
     ${renderArenaHero(topic)}
-    ${renderNextMove(topic)}
     ${renderOtherPickSays(topic)}
     ${renderComposer(topic)}
     <section class="arguments-section">
@@ -400,44 +389,6 @@ function renderArenaHero(topic) {
       </div>
       <h2>${esc(topic.question)}</h2>
       <div class="side-picks">${sideChoices}</div>
-    </section>
-  `;
-}
-
-function renderNextMove(topic) {
-  if (topic.status !== 'active') {
-    return `
-      <section class="next-move">
-        <div class="section-title">${t('nextMove')}</div>
-        <span class="hint">${t('inactiveReadOnly')}</span>
-      </section>
-    `;
-  }
-  if (!topic.currentPick) {
-    return `
-      <section class="next-move">
-        <div>
-          <div class="section-title">${t('nextMove')}</div>
-          <h3>${t('pick')}</h3>
-          <p>${t('nextMoveNoPick')}</p>
-        </div>
-      </section>
-    `;
-  }
-
-  const currentSide = topic.sides.find((side) => side.id === topic.currentPick.sideId);
-  const changeButtons = topic.sides
-    .filter((side) => side.id !== topic.currentPick.sideId)
-    .map((side) => `<button data-pick-side="${side.id}">${esc(t('changeTo', { side: side.label }))}</button>`)
-    .join('');
-  return `
-    <section class="next-move">
-      <div>
-        <div class="section-title">${t('nextMove')}</div>
-        <h3><span class="dot" style="background:${esc(currentSide.color)}"></span>${esc(t('currentPick', { side: currentSide.label }))}</h3>
-        <p>${esc(t('nextMovePicked', { side: currentSide.label }))}</p>
-      </div>
-      <div>${changeButtons}</div>
     </section>
   `;
 }
