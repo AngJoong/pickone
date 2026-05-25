@@ -17,12 +17,8 @@ const STRINGS = {
     close: 'Close',
     composerPlaceholder: 'Make your case for {side}',
     confirmSwayed: 'Change your Pick because of this Say?',
-    currentPickSnapshot: 'New Says use your current choice snapshot.',
     emptyTopics: 'No active topics.',
     forSide: 'for {side}',
-    featuredOtherPickSay: 'Featured other Pick Say',
-    focusNow: 'Focus now',
-    fullThread: 'Side lanes',
     inactivePreview: 'Inactive preview',
     inactiveReadOnly: 'Inactive topics are private and read-only.',
     language: 'Language',
@@ -40,7 +36,6 @@ const STRINGS = {
     none: 'None',
     oauthNeeded: '{provider} setup needed',
     openTopic: 'Open topic',
-    nextUp: 'Next up',
     pick: 'Pick',
     pickHistory: 'Pick Changes',
     pickCount: '{count} Picks',
@@ -48,7 +43,6 @@ const STRINGS = {
     pickFirstCase: 'Pick first to make your case.',
     pickUpdated: 'Pick updated.',
     private: 'Private',
-    noOtherPickSays: 'No public Say is ready yet.',
     profile: 'My Argument Trail',
     profileSubtitle: '@{handle} · {count} argument moments',
     report: 'Report',
@@ -56,19 +50,16 @@ const STRINGS = {
     reportSubmitted: 'Report submitted.',
     requestFailed: 'Request failed.',
     resay: 'ReSay',
-    rootSays: '{count} root Says',
     say: 'Say',
     sayCount: '{count} Says',
     sideStats: '{picks} Picks · {says} Says',
     signUp: 'Sign up',
     swayed: 'Swayed',
-    otherPickSaysNoPick: 'You can read now. Pick a side before taking action.',
     swayedHistory: 'Swayed Records',
     swayedReason: 'Optional: why did it sway you?',
     swayedRecorded: 'Swayed recorded.',
     tagline: 'Pick one. Change or defend your mind.',
     topics: 'Topics',
-    viewAllArguments: 'First-level Says with ReSays',
     writeResay: 'Write a ReSay',
     mySays: 'My Says',
     yourSay: 'Your Say',
@@ -87,12 +78,8 @@ const STRINGS = {
     close: '닫기',
     composerPlaceholder: '{side} 쪽 주장을 남겨주세요',
     confirmSwayed: '이 Say 때문에 Pick을 바꿀까요?',
-    currentPickSnapshot: '새 Say는 현재 선택 기준으로 기록됩니다.',
     emptyTopics: '진행 중인 토픽이 없습니다.',
     forSide: '{side} 쪽',
-    featuredOtherPickSay: '다른 Pick의 대표 Say',
-    focusNow: '지금 집중',
-    fullThread: '좌우 Say',
     inactivePreview: '비공개 미리보기',
     inactiveReadOnly: '비공개 토픽은 읽기만 가능합니다.',
     language: '언어',
@@ -110,7 +97,6 @@ const STRINGS = {
     none: '없음',
     oauthNeeded: '{provider} 설정 필요',
     openTopic: '토픽 열기',
-    nextUp: '다음에 볼 것',
     pick: 'Pick',
     pickHistory: 'Pick 변화',
     pickCount: '{count} Pick',
@@ -118,7 +104,6 @@ const STRINGS = {
     pickFirstCase: '먼저 Pick해야 주장을 남길 수 있습니다.',
     pickUpdated: 'Pick이 변경됐습니다.',
     private: '비공개',
-    noOtherPickSays: '아직 보여줄 Say가 없습니다.',
     profile: '내 주장 기록',
     profileSubtitle: '@{handle} · 주장 기록 {count}개',
     report: '신고',
@@ -126,19 +111,16 @@ const STRINGS = {
     reportSubmitted: '신고가 접수됐습니다.',
     requestFailed: '요청에 실패했습니다.',
     resay: 'ReSay',
-    rootSays: '상위 Say {count}개',
     say: 'Say',
     sayCount: '{count} Say',
     sideStats: 'Pick {picks} · Say {says}',
     signUp: '가입',
     swayed: 'Swayed',
-    otherPickSaysNoPick: '읽기는 가능하지만 행동은 Pick 이후 가능합니다.',
     swayedHistory: '설득된 기록',
     swayedReason: '선택 사항: 왜 설득됐나요?',
     swayedRecorded: 'Swayed가 기록됐습니다.',
     tagline: '하나를 고르고, 설득하거나 바꿔라.',
     topics: '토픽',
-    viewAllArguments: '상위 Say와 이어진 ReSay',
     writeResay: 'ReSay 쓰기',
     mySays: '내 Say',
     yourSay: '내 Say',
@@ -350,13 +332,12 @@ function renderTopicDetail() {
   }
 
   target.innerHTML = `
-    ${renderFocusPanel(topic)}
-    ${renderNextUp(topic)}
-    ${renderFullThread(topic)}
+    ${renderTopicPanel(topic)}
+    ${renderTopicSays(topic)}
   `;
 }
 
-function renderFocusPanel(topic) {
+function renderTopicPanel(topic) {
   const sideChoices = topic.sides.map((side) => `
     <div class="side-choice">
       <span class="side-swatch" style="background:${esc(side.color)}"></span>
@@ -373,9 +354,8 @@ function renderFocusPanel(topic) {
   `).join('');
 
   return `
-    <section class="focus-panel">
-      <div class="topic-kicker">
-        <span>${topic.status === 'active' ? t('focusNow') : t('inactivePreview')}</span>
+    <section class="topic-panel">
+      <div class="topic-actions">
         <button data-report="topic:${topic.id}">${t('report')}</button>
       </div>
       <h2>${esc(topic.question)}</h2>
@@ -385,85 +365,9 @@ function renderFocusPanel(topic) {
   `;
 }
 
-function flattenSays(says) {
-  return says.flatMap((say) => [say, ...(say.replies || [])]);
-}
-
-function findOtherPickSays(topic) {
-  const currentPick = topic.currentPick;
-  return flattenSays(topic.says)
-    .filter((say) => say.visible && say.eligible && say.authorId !== state.userId)
-    .filter((say) => !currentPick || say.sideId !== currentPick.sideId)
-    .sort((a, b) => (
-      (b.swayCount - a.swayCount)
-      || (b.boostCount - a.boostCount)
-      || String(b.createdAt).localeCompare(String(a.createdAt))
-    ))
-    .slice(0, 1);
-}
-
-function renderNextUp(topic) {
-  const says = findOtherPickSays(topic);
-  if (says.length === 0) {
-    return `
-      <section class="other-picks">
-        <div class="section-title">${t('nextUp')}</div>
-        <h3>${t('featuredOtherPickSay')}</h3>
-        <p class="hint">${t('noOtherPickSays')}</p>
-      </section>
-    `;
-  }
-
-  return `
-    <section class="other-picks">
-      <div class="other-picks-heading">
-        <div>
-          <div class="section-title">${t('nextUp')}</div>
-          <h3>${t('featuredOtherPickSay')}</h3>
-          ${topic.currentPick ? '' : `<p class="hint">${t('otherPickSaysNoPick')}</p>`}
-        </div>
-      </div>
-      <div class="other-picks-list">
-        ${says.map((say) => renderOtherPickSay(topic, say)).join('')}
-      </div>
-    </section>
-  `;
-}
-
-function renderOtherPickSay(topic, say) {
-  const canAct = topic.status === 'active' && topic.currentPick;
-  const canSwayed = canAct && say.sideId !== topic.currentPick.sideId && say.eligible;
-  const canReply = canAct && say.eligible;
-  return `
-    <article class="other-pick-say">
-      <div class="other-pick-copy">
-        <div class="say-meta">
-          <span class="side-badge"><span class="dot" style="background:${esc(say.sideColor)}"></span>${esc(say.sideLabel)}</span>
-          <span>${esc(say.authorName)}</span>
-          <span>${time(say.createdAt)}</span>
-        </div>
-        <p class="other-pick-body">${esc(say.body)}</p>
-      </div>
-      <div class="other-pick-actions">
-        <button class="primary" data-swayed="${say.id}" ${canSwayed ? '' : 'disabled'}>
-          ${t('swayed')} · ${say.swayCount}
-        </button>
-        <button data-reply="${say.id}" ${canReply ? '' : 'disabled'}>${t('resay')}</button>
-        <button data-report="say:${say.id}">${t('report')}</button>
-      </div>
-    </article>
-  `;
-}
-
-function renderFullThread(topic) {
+function renderTopicSays(topic) {
   return `
     <section class="arguments-section">
-      <div class="arguments-heading">
-        <div>
-          <div class="section-title">${t('fullThread')}</div>
-          <h3>${t('viewAllArguments')}</h3>
-        </div>
-      </div>
       <div class="lanes">
         ${topic.sides.map((side) => renderLane(topic, side)).join('')}
       </div>
@@ -483,7 +387,6 @@ function renderComposer(topic) {
     <form class="composer" data-say-form>
       <textarea name="body" maxlength="600" placeholder="${esc(t('composerPlaceholder', { side: side.label }))}"></textarea>
       <div class="composer-footer">
-        <span class="hint">${t('currentPickSnapshot')}</span>
         <button class="primary" type="submit">${t('say')}</button>
       </div>
     </form>
@@ -496,7 +399,7 @@ function renderLane(topic, side) {
     <div class="lane">
       <div class="lane-title">
         <span><span class="dot" style="background:${esc(side.color)}"></span> ${esc(side.label)}</span>
-        <span class="hint">${t('rootSays', { count: says.length })}</span>
+        <span class="hint">${t('sayCount', { count: says.length })}</span>
       </div>
       <div class="say-list">
         ${says.map((say) => renderSay(topic, say, false)).join('') || `<div class="empty-state">${t('noSays')}</div>`}

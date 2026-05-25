@@ -234,10 +234,6 @@ html[lang="ko"] .section-title {
   text-transform: none;
 }
 
-html[lang="ko"] .topic-kicker {
-  text-transform: none;
-}
-
 .topic-list,
 .timeline {
   display: grid;
@@ -246,9 +242,8 @@ html[lang="ko"] .topic-kicker {
 
 .topic-button,
 .timeline-item,
-.focus-panel,
+.topic-panel,
 .say-card,
-.other-picks,
 .activity-header,
 .activity-item,
 .empty-state {
@@ -377,25 +372,20 @@ html[lang="ko"] .topic-kicker {
   color: var(--ink);
 }
 
-.focus-panel {
+.topic-panel {
   display: grid;
   gap: 16px;
   padding: 20px;
   border-color: rgba(36, 87, 197, 0.34);
 }
 
-.topic-kicker {
+.topic-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
+  justify-content: flex-end;
 }
 
-.focus-panel h2 {
+.topic-panel h2 {
   margin: 0;
   font-size: 32px;
   line-height: 1.08;
@@ -443,66 +433,6 @@ html[lang="ko"] .topic-kicker {
 
 .danger {
   color: var(--danger);
-}
-
-.other-picks {
-  display: grid;
-  gap: 12px;
-  padding: 14px;
-  border-left: 4px solid var(--accent);
-  background: var(--panel);
-}
-
-.other-picks-heading {
-  display: grid;
-  gap: 5px;
-}
-
-.other-picks-heading h3,
-.other-picks h3 {
-  margin: 0;
-  font-size: 18px;
-  line-height: 1.2;
-}
-
-.other-picks-heading p {
-  margin: 0;
-}
-
-.other-picks-list {
-  display: grid;
-  gap: 10px;
-}
-
-.other-pick-say {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 14px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: #ffffff;
-}
-
-.other-pick-copy {
-  display: grid;
-  gap: 8px;
-}
-
-.other-pick-body {
-  margin: 0;
-  max-width: 760px;
-  overflow-wrap: anywhere;
-  font-size: 17px;
-  line-height: 1.42;
-}
-
-.other-pick-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 7px;
 }
 
 .arguments-section {
@@ -830,17 +760,12 @@ html[lang="ko"] .topic-kicker {
   }
 
   .side-picks,
-  .lanes,
-  .other-pick-say {
+  .lanes {
     grid-template-columns: 1fr;
   }
 
-  .focus-panel h2 {
+  .topic-panel h2 {
     font-size: 23px;
-  }
-
-  .other-pick-actions {
-    justify-content: flex-start;
   }
 
   .lane-title {
