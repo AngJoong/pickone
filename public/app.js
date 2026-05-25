@@ -10,10 +10,13 @@ const STRINGS = {
     activitySubtitle: 'Recent Say and Swayed moments across active arenas.',
     admin: 'admin',
     adminPreview: 'admin preview',
-    actionChangePick: 'Change Pick ({count})',
+    actionChangePick: 'Swayed',
+    actionChangePickCount: 'Swayed ({count})',
+    actionMore: 'More',
     actionReport: 'Report',
     actionSay: 'Say',
-    actionSupport: 'Support ({count})',
+    actionSupport: 'Support',
+    actionSupportCount: 'Support ({count})',
     authConfigHint: 'Set provider env vars to enable.',
     byFor: 'by {actor} for {side}',
     close: 'Close',
@@ -73,10 +76,13 @@ const STRINGS = {
     activitySubtitle: '진행 중 Arena의 Say, Swayed 흐름입니다.',
     admin: '관리자',
     adminPreview: '관리자 미리보기',
-    actionChangePick: 'Pick 변경 {count}',
+    actionChangePick: 'Swayed',
+    actionChangePickCount: 'Swayed {count}',
+    actionMore: '더보기',
     actionReport: '신고',
     actionSay: 'Say',
-    actionSupport: '응원 {count}',
+    actionSupport: 'Support',
+    actionSupportCount: 'Support {count}',
     authConfigHint: '환경 변수를 설정하면 켜집니다.',
     byFor: '{actor} · {side}',
     close: '닫기',
@@ -182,6 +188,27 @@ function time(value) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value));
+}
+
+function icon(name) {
+  const paths = {
+    support: '<path d="M7 10v10"/><path d="M15 6.5 14 10h5.5l-1.2 8.4A2 2 0 0 1 16.3 20H7V10l4.2-6.3A1.8 1.8 0 0 1 14.5 5l.5 1.5Z"/>',
+    swayed: '<path d="M7 7h10v10"/><path d="m7 17 10-10"/><path d="M17 17H7V7"/>',
+    say: '<path d="M5 7.5A3.5 3.5 0 0 1 8.5 4h7A3.5 3.5 0 0 1 19 7.5v4A3.5 3.5 0 0 1 15.5 15H11l-4.5 4v-4A3.5 3.5 0 0 1 5 11.5Z"/>',
+    report: '<path d="M6 21V4"/><path d="M6 5h11l-2 4 2 4H6"/>',
+  };
+  return `<svg class="action-icon" aria-hidden="true" viewBox="0 0 24 24">${paths[name] || ''}</svg>`;
+}
+
+function renderActionButton({ className, dataAttr, iconName, label, count, disabled = false, active = false, hideLabel = false }) {
+  const text = count == null ? label : `${label} ${count}`;
+  return `
+    <button class="action-button ${className} ${active ? 'active' : ''}" ${dataAttr} title="${esc(text)}" aria-label="${esc(text)}" ${disabled ? 'disabled' : ''}>
+      ${icon(iconName)}
+      ${hideLabel ? '' : `<span>${esc(label)}</span>`}
+      ${count == null ? '' : `<strong>${count}</strong>`}
+    </button>
+  `;
 }
 
 function toast(message) {
@@ -360,14 +387,33 @@ function renderTopicPanel(topic) {
   return `
     <section class="topic-panel">
       <div class="topic-actions">
-        <button class="icon-action report" data-report="topic:${topic.id}" title="${esc(t('actionReport'))}" aria-label="${esc(t('actionReport'))}">
-          <span aria-hidden="true">🚩</span>
-        </button>
+        ${renderActionButton({
+          className: 'report quiet',
+          dataAttr: `data-report="topic:${topic.id}"`,
+          iconName: 'report',
+          label: t('actionReport'),
+          hideLabel: true,
+        })}
       </div>
       <h2>${esc(topic.question)}</h2>
+      ${renderTensionMeter(topic)}
       <div class="side-picks">${sideChoices}</div>
       ${renderComposer(topic)}
     </section>
+  `;
+}
+
+function renderTensionMeter(topic) {
+  const [left, right] = topic.sides;
+  if (!left || !right) return '';
+  const total = Math.max(1, left.pickCount + right.pickCount);
+  const leftWidth = Math.round((left.pickCount / total) * 100);
+  return `
+    <div class="tension-meter" aria-hidden="true">
+      <span style="--side-color:${esc(left.color)}; width:${leftWidth}%"></span>
+      <i>VS</i>
+      <span style="--side-color:${esc(right.color)}; width:${100 - leftWidth}%"></span>
+    </div>
   `;
 }
 
@@ -431,20 +477,37 @@ function renderSay(topic, say, isReply) {
       </div>
       <p class="say-body">${esc(say.body)}</p>
       <div class="say-actions">
-        <button class="icon-action support ${say.boostedByCurrentUser ? 'active' : ''}" data-boost="${say.id}" title="${esc(t('actionSupport', { count: say.boostCount }))}" aria-label="${esc(t('actionSupport', { count: say.boostCount }))}" ${canBoost ? '' : 'disabled'}>
-          <span aria-hidden="true">🙌</span>
-          <span class="action-count">${say.boostCount}</span>
-        </button>
-        <button class="icon-action swayed" data-swayed="${say.id}" title="${esc(t('actionChangePick', { count: say.swayCount }))}" aria-label="${esc(t('actionChangePick', { count: say.swayCount }))}" ${canSwayed ? '' : 'disabled'}>
-          <span aria-hidden="true">↔️</span>
-          <span class="action-count">${say.swayCount}</span>
-        </button>
-        <button class="icon-action say" data-reply="${say.id}" title="${esc(t('actionSay'))}" aria-label="${esc(t('actionSay'))}" ${canParticipate && say.eligible ? '' : 'disabled'}>
-          <span aria-hidden="true">💬</span>
-        </button>
-        <button class="icon-action report" data-report="say:${say.id}" title="${esc(t('actionReport'))}" aria-label="${esc(t('actionReport'))}">
-          <span aria-hidden="true">🚩</span>
-        </button>
+        ${renderActionButton({
+          className: 'support',
+          dataAttr: `data-boost="${say.id}"`,
+          iconName: 'support',
+          label: t('actionSupport'),
+          count: say.boostCount,
+          disabled: !canBoost,
+          active: say.boostedByCurrentUser,
+        })}
+        ${renderActionButton({
+          className: 'swayed',
+          dataAttr: `data-swayed="${say.id}"`,
+          iconName: 'swayed',
+          label: t('actionChangePick'),
+          count: say.swayCount,
+          disabled: !canSwayed,
+        })}
+        ${renderActionButton({
+          className: 'say',
+          dataAttr: `data-reply="${say.id}"`,
+          iconName: 'say',
+          label: t('actionSay'),
+          disabled: !(canParticipate && say.eligible),
+        })}
+        ${renderActionButton({
+          className: 'report quiet',
+          dataAttr: `data-report="say:${say.id}"`,
+          iconName: 'report',
+          label: t('actionReport'),
+          hideLabel: true,
+        })}
       </div>
       <div class="reply-list">
         ${(say.replies || []).map((reply) => renderSay(topic, reply, true)).join('')}
