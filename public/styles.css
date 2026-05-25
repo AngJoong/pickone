@@ -230,6 +230,14 @@ button.oauth-button:disabled {
   text-transform: uppercase;
 }
 
+html[lang="ko"] .section-title {
+  text-transform: none;
+}
+
+html[lang="ko"] .topic-kicker {
+  text-transform: none;
+}
+
 .topic-list,
 .timeline {
   display: grid;
@@ -240,8 +248,10 @@ button.oauth-button:disabled {
 .timeline-item,
 .topic-header,
 .pick-strip,
+.next-move,
 .composer,
 .say-card,
+.spotlight-card,
 .activity-header,
 .activity-item,
 .empty-state {
@@ -374,6 +384,11 @@ button.oauth-button:disabled {
   padding: 18px;
 }
 
+.arena-hero {
+  display: grid;
+  gap: 14px;
+}
+
 .topic-kicker {
   display: flex;
   align-items: center;
@@ -386,9 +401,9 @@ button.oauth-button:disabled {
 }
 
 .topic-header h2 {
-  margin: 8px 0 14px;
-  font-size: 28px;
-  line-height: 1.12;
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.08;
   letter-spacing: 0;
 }
 
@@ -442,6 +457,77 @@ button.oauth-button:disabled {
   justify-content: space-between;
   gap: 10px;
   padding: 12px;
+}
+
+.next-move {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+}
+
+.next-move h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.next-move p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.spotlight-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+  padding: 16px;
+  border-left: 4px solid var(--accent);
+}
+
+.spotlight-copy {
+  display: grid;
+  gap: 9px;
+}
+
+.spotlight-body {
+  margin: 0;
+  max-width: 760px;
+  overflow-wrap: anywhere;
+  font-size: 19px;
+  line-height: 1.42;
+}
+
+.spotlight-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.arguments-section {
+  display: grid;
+  gap: 8px;
+}
+
+.arguments-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 2px 0;
+}
+
+.arguments-heading h3 {
+  margin: 0;
+  font-size: 18px;
 }
 
 .pick-current {
@@ -732,11 +818,11 @@ button.oauth-button:disabled {
     display: contents;
   }
 
-  .rail:not(.rail-right) > section:first-child {
+  .topic-detail {
     order: 1;
   }
 
-  .topic-detail {
+  .rail:not(.rail-right) > section:first-child {
     order: 2;
   }
 
@@ -745,12 +831,17 @@ button.oauth-button:disabled {
   }
 
   .side-picks,
-  .lanes {
+  .lanes,
+  .spotlight-card {
     grid-template-columns: 1fr;
   }
 
   .topic-header h2 {
     font-size: 23px;
+  }
+
+  .spotlight-actions {
+    justify-content: flex-start;
   }
 
   .lane-title {

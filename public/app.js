@@ -5,10 +5,11 @@ const userIdFromQuery = Number(query.get('userId') || 0);
 const STRINGS = {
   en: {
     account: 'Account',
-    activeTopic: 'Active topic',
-    activity: 'Activity',
+    activeTopic: 'Active Arena',
+    activity: 'Arena Pulse',
     activityEmpty: 'No activity yet.',
-    activitySubtitle: 'Recent Say, ReSay, and Swayed events across topics.',
+    activitySubtitle: 'Recent Say, ReSay, and Swayed moments across active arenas.',
+    allArguments: 'All arguments',
     admin: 'admin',
     adminPreview: 'admin preview',
     authConfigHint: 'Set provider env vars to enable.',
@@ -40,16 +41,21 @@ const STRINGS = {
     none: 'None',
     oauthNeeded: '{provider} setup needed',
     openTopic: 'Open topic',
+    opposingCase: 'Opposing Case',
     pick: 'Pick',
-    pickHistory: 'Pick History',
+    pickHistory: 'Pick Changes',
     pickCount: '{count} Picks',
     picked: 'Picked',
     pickFirstActions: 'Pick a side before writing, Boosting, or using Swayed.',
     pickFirstCase: 'Pick first to make your case.',
     pickUpdated: 'Pick updated.',
     private: 'Private',
-    profile: 'Profile',
-    profileSubtitle: '@{handle} · {count} personal events',
+    nextMove: 'Next move',
+    nextMoveNoPick: 'Pick a side to Say, ReSay, Boost, or mark Swayed.',
+    nextMovePicked: 'Defend {side}, or test it against the strongest opposing case.',
+    noOpposingCase: 'No opposing Say is ready yet.',
+    profile: 'My Argument Trail',
+    profileSubtitle: '@{handle} · {count} argument moments',
     report: 'Report',
     reportReason: 'Report reason: {reasons}',
     reportSubmitted: 'Report submitted.',
@@ -61,10 +67,11 @@ const STRINGS = {
     sideStats: '{picks} Picks · {says} Says',
     signUp: 'Sign up',
     swayed: 'Swayed',
-    swayedHistory: 'Swayed',
+    spotlightNoPick: 'You can read now. Pick a side before taking action.',
+    swayedHistory: 'Swayed Records',
     swayedReason: 'Optional: why did it sway you?',
     swayedRecorded: 'Swayed recorded.',
-    tagline: 'Pick one. Make your case.',
+    tagline: 'Pick one. Change or defend your mind.',
     topics: 'Topics',
     writeResay: 'Write a ReSay',
     mySays: 'My Says',
@@ -72,10 +79,11 @@ const STRINGS = {
   },
   ko: {
     account: '계정',
-    activeTopic: '진행 중 토픽',
-    activity: '활동',
+    activeTopic: '진행 중 Arena',
+    activity: '흐름',
     activityEmpty: '아직 활동이 없습니다.',
-    activitySubtitle: '토픽 전체의 Say, ReSay, Swayed 흐름입니다.',
+    activitySubtitle: '진행 중 Arena의 Say, ReSay, Swayed 흐름입니다.',
+    allArguments: '전체 주장',
     admin: '관리자',
     adminPreview: '관리자 미리보기',
     authConfigHint: '환경 변수를 설정하면 켜집니다.',
@@ -107,16 +115,21 @@ const STRINGS = {
     none: '없음',
     oauthNeeded: '{provider} 설정 필요',
     openTopic: '토픽 열기',
+    opposingCase: '상대 주장',
     pick: 'Pick',
-    pickHistory: 'Pick 기록',
+    pickHistory: 'Pick 변화',
     pickCount: '{count} Pick',
     picked: 'Picked',
     pickFirstActions: '먼저 Pick해야 Say, Boost, Swayed를 사용할 수 있습니다.',
     pickFirstCase: '먼저 Pick해야 주장을 남길 수 있습니다.',
     pickUpdated: 'Pick이 변경됐습니다.',
     private: '비공개',
-    profile: '프로필',
-    profileSubtitle: '@{handle} · 개인 기록 {count}개',
+    nextMove: '다음 행동',
+    nextMoveNoPick: '먼저 Pick하면 Say, ReSay, Boost, Swayed를 사용할 수 있습니다.',
+    nextMovePicked: '{side}를 지키거나, 가장 강한 상대 주장을 확인해 보세요.',
+    noOpposingCase: '아직 보여줄 상대 주장이 없습니다.',
+    profile: '내 주장 기록',
+    profileSubtitle: '@{handle} · 주장 기록 {count}개',
     report: '신고',
     reportReason: '신고 사유: {reasons}',
     reportSubmitted: '신고가 접수됐습니다.',
@@ -128,10 +141,11 @@ const STRINGS = {
     sideStats: 'Pick {picks} · Say {says}',
     signUp: '가입',
     swayed: 'Swayed',
-    swayedHistory: 'Swayed 기록',
+    spotlightNoPick: '읽기는 가능하지만 행동은 Pick 이후 가능합니다.',
+    swayedHistory: '설득된 기록',
     swayedReason: '선택 사항: 왜 설득됐나요?',
     swayedRecorded: 'Swayed가 기록됐습니다.',
-    tagline: '하나를 골라. 네 주장을 펼쳐.',
+    tagline: '하나를 고르고, 설득하거나 바꿔라.',
     topics: '토픽',
     writeResay: 'ReSay 쓰기',
     mySays: '내 Say',
@@ -343,6 +357,26 @@ function renderTopicDetail() {
     return;
   }
 
+  target.innerHTML = `
+    ${renderArenaHero(topic)}
+    ${renderNextMove(topic)}
+    ${renderOpposingSpotlight(topic)}
+    ${renderComposer(topic)}
+    <section class="arguments-section">
+      <div class="arguments-heading">
+        <div>
+          <div class="section-title">${t('allArguments')}</div>
+          <h3>${t('allArguments')}</h3>
+        </div>
+      </div>
+      <div class="lanes">
+        ${topic.sides.map((side) => renderLane(topic, side)).join('')}
+      </div>
+    </section>
+  `;
+}
+
+function renderArenaHero(topic) {
   const sideChoices = topic.sides.map((side) => `
     <div class="side-choice">
       <span class="side-swatch" style="background:${esc(side.color)}"></span>
@@ -358,8 +392,8 @@ function renderTopicDetail() {
     </div>
   `).join('');
 
-  target.innerHTML = `
-    <section class="topic-header">
+  return `
+    <section class="topic-header arena-hero">
       <div class="topic-kicker">
         <span>${topic.status === 'active' ? t('activeTopic') : t('inactivePreview')}</span>
         <button data-report="topic:${topic.id}">${t('report')}</button>
@@ -367,26 +401,26 @@ function renderTopicDetail() {
       <h2>${esc(topic.question)}</h2>
       <div class="side-picks">${sideChoices}</div>
     </section>
-    ${renderPickStrip(topic)}
-    ${renderComposer(topic)}
-    <section class="lanes">
-      ${topic.sides.map((side) => renderLane(topic, side)).join('')}
-    </section>
   `;
 }
 
-function renderPickStrip(topic) {
+function renderNextMove(topic) {
   if (topic.status !== 'active') {
     return `
-      <section class="pick-strip">
+      <section class="next-move">
+        <div class="section-title">${t('nextMove')}</div>
         <span class="hint">${t('inactiveReadOnly')}</span>
       </section>
     `;
   }
   if (!topic.currentPick) {
     return `
-      <section class="pick-strip">
-        <span class="hint">${t('pickFirstActions')}</span>
+      <section class="next-move">
+        <div>
+          <div class="section-title">${t('nextMove')}</div>
+          <h3>${t('pick')}</h3>
+          <p>${t('nextMoveNoPick')}</p>
+        </div>
       </section>
     `;
   }
@@ -397,12 +431,66 @@ function renderPickStrip(topic) {
     .map((side) => `<button data-pick-side="${side.id}">${esc(t('changeTo', { side: side.label }))}</button>`)
     .join('');
   return `
-    <section class="pick-strip">
-      <div class="pick-current">
-        <span class="dot" style="background:${esc(currentSide.color)}"></span>
-        ${esc(t('currentPick', { side: currentSide.label }))}
+    <section class="next-move">
+      <div>
+        <div class="section-title">${t('nextMove')}</div>
+        <h3><span class="dot" style="background:${esc(currentSide.color)}"></span>${esc(t('currentPick', { side: currentSide.label }))}</h3>
+        <p>${esc(t('nextMovePicked', { side: currentSide.label }))}</p>
       </div>
       <div>${changeButtons}</div>
+    </section>
+  `;
+}
+
+function flattenSays(says) {
+  return says.flatMap((say) => [say, ...(say.replies || [])]);
+}
+
+function findOpposingSpotlight(topic) {
+  const currentPick = topic.currentPick;
+  const says = flattenSays(topic.says)
+    .filter((say) => say.visible && say.eligible && say.authorId !== state.userId)
+    .filter((say) => !currentPick || say.sideId !== currentPick.sideId);
+  return says.sort((a, b) => (
+    (b.swayCount - a.swayCount)
+    || (b.boostCount - a.boostCount)
+    || String(b.createdAt).localeCompare(String(a.createdAt))
+  ))[0] ?? null;
+}
+
+function renderOpposingSpotlight(topic) {
+  const say = findOpposingSpotlight(topic);
+  const canAct = topic.status === 'active' && topic.currentPick && say;
+  const canSwayed = canAct && say.sideId !== topic.currentPick.sideId && say.eligible;
+  const canReply = canAct && say.eligible;
+  if (!say) {
+    return `
+      <section class="spotlight-card">
+        <div class="section-title">${t('opposingCase')}</div>
+        <p class="hint">${t('noOpposingCase')}</p>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="spotlight-card">
+      <div class="spotlight-copy">
+        <div class="section-title">${t('opposingCase')}</div>
+        <div class="say-meta">
+          <span class="side-badge"><span class="dot" style="background:${esc(say.sideColor)}"></span>${esc(say.sideLabel)}</span>
+          <span>${esc(say.authorName)}</span>
+          <span>${time(say.createdAt)}</span>
+        </div>
+        <p class="spotlight-body">${esc(say.body)}</p>
+        ${topic.currentPick ? '' : `<p class="hint">${t('spotlightNoPick')}</p>`}
+      </div>
+      <div class="spotlight-actions">
+        <button class="primary" data-swayed="${say.id}" ${canSwayed ? '' : 'disabled'}>
+          ${t('swayed')} · ${say.swayCount}
+        </button>
+        <button data-reply="${say.id}" ${canReply ? '' : 'disabled'}>${t('resay')}</button>
+        <button data-report="say:${say.id}">${t('report')}</button>
+      </div>
     </section>
   `;
 }
