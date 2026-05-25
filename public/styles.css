@@ -431,6 +431,43 @@ html[lang="ko"] .section-title {
   color: var(--accent-ink);
 }
 
+.icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 38px;
+  min-height: 34px;
+  padding: 0 9px;
+  border-radius: 8px;
+  line-height: 1;
+}
+
+.icon-action span[aria-hidden="true"] {
+  font-size: 17px;
+}
+
+.icon-action.swayed {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.icon-action.support.active {
+  border-color: var(--success);
+  background: color-mix(in srgb, var(--success) 14%, #ffffff);
+}
+
+.icon-action.report:hover:not(:disabled) {
+  border-color: var(--danger);
+}
+
+.action-count {
+  min-width: 1ch;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .danger {
   color: var(--danger);
 }
@@ -497,7 +534,45 @@ html[lang="ko"] .section-title {
 }
 
 .lane {
+  position: relative;
+  overflow: hidden;
   min-width: 0;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--side-color) 32%, var(--line));
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--side-color) 9%, #ffffff), #ffffff 36%);
+}
+
+.lane::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 45%;
+  pointer-events: none;
+  opacity: 0.16;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      var(--side-color) 0 10px,
+      transparent 10px 18px
+    );
+  clip-path: polygon(0 0, 74% 0, 100% 100%, 0 100%);
+}
+
+.lane-left::before {
+  left: 0;
+}
+
+.lane-right::before {
+  right: 0;
+  transform: scaleX(-1);
+}
+
+.lane > * {
+  position: relative;
+  z-index: 1;
 }
 
 .lane-title {
@@ -509,8 +584,10 @@ html[lang="ko"] .section-title {
   justify-content: space-between;
   gap: 8px;
   min-height: 38px;
-  padding: 8px 2px;
-  background: var(--panel);
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--side-color) 25%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--side-color) 10%, #ffffff);
   font-weight: 800;
 }
 
@@ -530,6 +607,7 @@ html[lang="ko"] .section-title {
   display: grid;
   gap: 10px;
   padding: 12px;
+  border-left-width: 4px;
 }
 
 .say-card.reply {

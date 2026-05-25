@@ -7,12 +7,14 @@ const STRINGS = {
     account: 'Account',
     activity: 'Arena Pulse',
     activityEmpty: 'No activity yet.',
-    activitySubtitle: 'Recent Say, ReSay, and Swayed moments across active arenas.',
+    activitySubtitle: 'Recent Say and Swayed moments across active arenas.',
     admin: 'admin',
     adminPreview: 'admin preview',
+    actionChangePick: 'Change Pick ({count})',
+    actionReport: 'Report',
+    actionSay: 'Say',
+    actionSupport: 'Support ({count})',
     authConfigHint: 'Set provider env vars to enable.',
-    boost: 'Boost',
-    boosted: 'Boosted',
     byFor: 'by {actor} for {side}',
     close: 'Close',
     composerPlaceholder: 'Make your case for {side}',
@@ -49,7 +51,7 @@ const STRINGS = {
     reportReason: 'Report reason: {reasons}',
     reportSubmitted: 'Report submitted.',
     requestFailed: 'Request failed.',
-    resay: 'ReSay',
+    resay: 'Say',
     say: 'Say',
     sayCount: '{count} Says',
     sideStats: '{picks} Picks · {says} Says',
@@ -60,7 +62,7 @@ const STRINGS = {
     swayedRecorded: 'Swayed recorded.',
     tagline: 'Pick one. Change or defend your mind.',
     topics: 'Topics',
-    writeResay: 'Write a ReSay',
+    writeResay: 'Write a Say',
     mySays: 'My Says',
     yourSay: 'Your Say',
   },
@@ -68,12 +70,14 @@ const STRINGS = {
     account: '계정',
     activity: '흐름',
     activityEmpty: '아직 활동이 없습니다.',
-    activitySubtitle: '진행 중 Arena의 Say, ReSay, Swayed 흐름입니다.',
+    activitySubtitle: '진행 중 Arena의 Say, Swayed 흐름입니다.',
     admin: '관리자',
     adminPreview: '관리자 미리보기',
+    actionChangePick: 'Pick 변경 {count}',
+    actionReport: '신고',
+    actionSay: 'Say',
+    actionSupport: '응원 {count}',
     authConfigHint: '환경 변수를 설정하면 켜집니다.',
-    boost: 'Boost',
-    boosted: 'Boosted',
     byFor: '{actor} · {side}',
     close: '닫기',
     composerPlaceholder: '{side} 쪽 주장을 남겨주세요',
@@ -110,7 +114,7 @@ const STRINGS = {
     reportReason: '신고 사유: {reasons}',
     reportSubmitted: '신고가 접수됐습니다.',
     requestFailed: '요청에 실패했습니다.',
-    resay: 'ReSay',
+    resay: 'Say',
     say: 'Say',
     sayCount: '{count} Say',
     sideStats: 'Pick {picks} · Say {says}',
@@ -121,7 +125,7 @@ const STRINGS = {
     swayedRecorded: 'Swayed가 기록됐습니다.',
     tagline: '하나를 고르고, 설득하거나 바꿔라.',
     topics: '토픽',
-    writeResay: 'ReSay 쓰기',
+    writeResay: 'Say 쓰기',
     mySays: '내 Say',
     yourSay: '내 Say',
   },
@@ -356,7 +360,9 @@ function renderTopicPanel(topic) {
   return `
     <section class="topic-panel">
       <div class="topic-actions">
-        <button data-report="topic:${topic.id}">${t('report')}</button>
+        <button class="icon-action report" data-report="topic:${topic.id}" title="${esc(t('actionReport'))}" aria-label="${esc(t('actionReport'))}">
+          <span aria-hidden="true">🚩</span>
+        </button>
       </div>
       <h2>${esc(topic.question)}</h2>
       <div class="side-picks">${sideChoices}</div>
@@ -369,7 +375,7 @@ function renderTopicSays(topic) {
   return `
     <section class="arguments-section">
       <div class="lanes">
-        ${topic.sides.map((side) => renderLane(topic, side)).join('')}
+        ${topic.sides.map((side, index) => renderLane(topic, side, index)).join('')}
       </div>
     </section>
   `;
@@ -393,10 +399,10 @@ function renderComposer(topic) {
   `;
 }
 
-function renderLane(topic, side) {
+function renderLane(topic, side, index) {
   const says = topic.says.filter((say) => say.sideId === side.id);
   return `
-    <div class="lane">
+    <div class="lane lane-${index % 2 === 0 ? 'left' : 'right'}" style="--side-color:${esc(side.color)}">
       <div class="lane-title">
         <span><span class="dot" style="background:${esc(side.color)}"></span> ${esc(side.label)}</span>
         <span class="hint">${t('sayCount', { count: says.length })}</span>
@@ -416,7 +422,7 @@ function renderSay(topic, say, isReply) {
   const canSwayed = canParticipate && !isOwn && say.sideId !== currentPick.sideId && say.eligible;
   const replyLabel = isReply && say.replyToAuthorName ? `<span class="reply-target">@${esc(say.replyToAuthorName)}</span>` : '';
   return `
-    <article class="say-card ${isReply ? 'reply' : ''}" style="${isReply ? `border-left-color:${esc(say.sideColor)}` : ''}">
+    <article class="say-card ${isReply ? 'reply' : ''}" style="border-left-color:${esc(say.sideColor)}">
       <div class="say-meta">
         <span class="side-badge"><span class="dot" style="background:${esc(say.sideColor)}"></span>${esc(say.sideLabel)}</span>
         <span>${esc(say.authorName)}</span>
@@ -425,14 +431,20 @@ function renderSay(topic, say, isReply) {
       </div>
       <p class="say-body">${esc(say.body)}</p>
       <div class="say-actions">
-        <button data-boost="${say.id}" ${canBoost ? '' : 'disabled'}>
-          ${say.boostedByCurrentUser ? t('boosted') : t('boost')} · ${say.boostCount}
+        <button class="icon-action support ${say.boostedByCurrentUser ? 'active' : ''}" data-boost="${say.id}" title="${esc(t('actionSupport', { count: say.boostCount }))}" aria-label="${esc(t('actionSupport', { count: say.boostCount }))}" ${canBoost ? '' : 'disabled'}>
+          <span aria-hidden="true">🙌</span>
+          <span class="action-count">${say.boostCount}</span>
         </button>
-        <button class="primary" data-swayed="${say.id}" ${canSwayed ? '' : 'disabled'}>
-          ${t('swayed')} · ${say.swayCount}
+        <button class="icon-action swayed" data-swayed="${say.id}" title="${esc(t('actionChangePick', { count: say.swayCount }))}" aria-label="${esc(t('actionChangePick', { count: say.swayCount }))}" ${canSwayed ? '' : 'disabled'}>
+          <span aria-hidden="true">↔️</span>
+          <span class="action-count">${say.swayCount}</span>
         </button>
-        <button data-reply="${say.id}" ${canParticipate && say.eligible ? '' : 'disabled'}>${t('resay')}</button>
-        <button data-report="say:${say.id}">${t('report')}</button>
+        <button class="icon-action say" data-reply="${say.id}" title="${esc(t('actionSay'))}" aria-label="${esc(t('actionSay'))}" ${canParticipate && say.eligible ? '' : 'disabled'}>
+          <span aria-hidden="true">💬</span>
+        </button>
+        <button class="icon-action report" data-report="say:${say.id}" title="${esc(t('actionReport'))}" aria-label="${esc(t('actionReport'))}">
+          <span aria-hidden="true">🚩</span>
+        </button>
       </div>
       <div class="reply-list">
         ${(say.replies || []).map((reply) => renderSay(topic, reply, true)).join('')}
