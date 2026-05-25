@@ -63,7 +63,6 @@ const STRINGS = {
     swayedHistory: 'Swayed Records',
     swayedReason: 'Optional: why did it sway you?',
     swayedRecorded: 'Swayed recorded.',
-    tagline: 'Pick one. Change or defend your mind.',
     topics: 'Topics',
     writeResay: 'Write a Say',
     mySays: 'My Says',
@@ -129,7 +128,6 @@ const STRINGS = {
     swayedHistory: '설득된 기록',
     swayedReason: '선택 사항: 왜 설득됐나요?',
     swayedRecorded: 'Swayed가 기록됐습니다.',
-    tagline: '하나를 고르고, 설득하거나 바꿔라.',
     topics: '토픽',
     writeResay: 'Say 쓰기',
     mySays: '내 Say',
@@ -292,7 +290,6 @@ function render() {
 
 function renderChrome() {
   document.documentElement.lang = state.locale;
-  $('#brand-tagline').textContent = t('tagline');
   $('#account-label').textContent = t('account');
   $('#language-label').textContent = t('language');
   $('#topics-title').textContent = t('topics');
@@ -370,7 +367,7 @@ function renderTopicDetail() {
 
 function renderTopicPanel(topic) {
   const sideChoices = topic.sides.map((side) => `
-    <div class="side-choice">
+    <div class="side-choice ${topic.currentPick?.sideId === side.id ? 'selected' : ''}" style="--side-color:${esc(side.color)}">
       <span class="side-swatch" style="background:${esc(side.color)}"></span>
       <div>
         <strong>${esc(side.label)}</strong>
@@ -408,11 +405,18 @@ function renderTensionMeter(topic) {
   if (!left || !right) return '';
   const total = Math.max(1, left.pickCount + right.pickCount);
   const leftWidth = Math.round((left.pickCount / total) * 100);
+  const rightWidth = 100 - leftWidth;
   return `
-    <div class="tension-meter" aria-hidden="true">
-      <span style="--side-color:${esc(left.color)}; width:${leftWidth}%"></span>
-      <i>VS</i>
-      <span style="--side-color:${esc(right.color)}; width:${100 - leftWidth}%"></span>
+    <div class="conviction-scale" aria-hidden="true">
+      <div class="scale-labels">
+        <span><b style="background:${esc(left.color)}"></b>${esc(left.label)} ${left.pickCount}</span>
+        <span>${esc(right.label)} ${right.pickCount}<b style="background:${esc(right.color)}"></b></span>
+      </div>
+      <div class="scale-track">
+        <span style="--side-color:${esc(left.color)}; width:${leftWidth}%"></span>
+        <i>VS</i>
+        <span style="--side-color:${esc(right.color)}; width:${rightWidth}%"></span>
+      </div>
     </div>
   `;
 }
@@ -468,7 +472,7 @@ function renderSay(topic, say, isReply) {
   const canSwayed = canParticipate && !isOwn && say.sideId !== currentPick.sideId && say.eligible;
   const replyLabel = isReply && say.replyToAuthorName ? `<span class="reply-target">@${esc(say.replyToAuthorName)}</span>` : '';
   return `
-    <article class="say-card ${isReply ? 'reply' : ''}" style="border-left-color:${esc(say.sideColor)}">
+    <article class="say-card ${isReply ? 'reply' : ''}" style="--say-color:${esc(say.sideColor)}; border-left-color:${esc(say.sideColor)}">
       <div class="say-meta">
         <span class="side-badge"><span class="dot" style="background:${esc(say.sideColor)}"></span>${esc(say.sideLabel)}</span>
         <span>${esc(say.authorName)}</span>
